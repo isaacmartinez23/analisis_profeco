@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: int_productos_sku
+    description: Combinación original producto + presentación + marca → producto normalizado.
+    columns:
+      - name: sku_original_num
+        tests: [unique, not_null]
+      - name: producto_id
+        tests: [not_null]
+      - name: catalogos_mask
+        tests: [not_null]
+    tests:
+      - unique_combination:
+          arguments: {columns: ["producto_original", "presentacion_original", "marca_original"]}
+
+  - name: int_establecimientos
+    description: Combinación original nombre + dirección + estado + municipio → establecimiento canónico.
+    columns:
+      - name: establecimiento_original_num
+        tests: [unique, not_null]
+      - name: establecimiento_id
+        tests: [not_null]
+      - name: geografia_id
+        tests: [not_null]
+      - name: cadena_key
+        tests:
+          - expression_is_true: {arguments: {expression: "cadena_key <> ''"}}
+    tests:
+      - unique_combination:
+          arguments: {columns: ["nombre_comercial", "direccion", "estado", "municipio"]}
+
+  - name: int_observaciones
+    description: >
+      Observaciones consolidadas. Grano: producto_id × establecimiento_id × fecha × precio.
+      `n_registros_origen` = filas crudas que respaldan la observación.
+    columns:
+      - name: n_registros_origen
+        tests:
+          - expression_is_true: {arguments: {expression: "n_registros_origen >= 1"}}
+
+  - name: int_canasta_observaciones
+    description: Observaciones comparables, no atípicas, de productos asignados a un artículo de canasta.
+    columns:
+      - name: precio_unitario
+        tests: [not_null]
+      - name: articulo_id
+        tests: [not_null]
+
+  - name: int_canasta_articulo_semanal
+    description: Mediana del precio unitario por cadena × municipio × semana (ventana móvil) × artículo.
+    tests:
+      - unique_combination:
+          arguments: {columns: ["cadena_key", "geografia_id", "semana_inicio", "articulo_id"]}
+    columns:
+      - name: mediana_precio_unitario
+        tests:
+          - not_null
+          - expression_is_true: {arguments: {expression: "mediana_precio_unitario > 0"}}
+      - name: n_observaciones
+        tests:
+          - expression_is_true: {arguments: {expression: "n_observaciones >= 1"}}

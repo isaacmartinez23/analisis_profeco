@@ -1,0 +1,40 @@
+{
+  "criterios": "1. Archivos: la quincena 2025-12 Q2 (estados sin acento) y las cuatro quincenas\n   de abril-mayo 2026 (cambio de codificación, fecha y caracteres perdidos).\n2. Municipios: Venustiano Carranza (CDMX) y Santiago de Querétaro, con las 4\n   cadenas de referencia y cambio de acentos en el nombre del estado.\n3. Filas: todas las de los productos candidatos a canasta en esos municipios,\n   un 3% determinista (por hash) del resto de filas de esos municipios y un 10%\n   determinista de las filas con caracteres perdidos (`?`) de cualquier municipio.",
+  "archivos": [
+    {
+      "archivo": "QQP_2025/12-2025_02.csv",
+      "filas": 1952,
+      "bytes": 632463,
+      "crc32": 3089003336,
+      "codificacion": "utf-8-sig"
+    },
+    {
+      "archivo": "QQP_2026/04-2026_Q1.csv",
+      "filas": 2536,
+      "bytes": 819586,
+      "crc32": 941011482,
+      "codificacion": "utf-8-sig"
+    },
+    {
+      "archivo": "QQP_2026/04-2026_Q2.csv",
+      "filas": 3725,
+      "bytes": 1192103,
+      "crc32": 3585245125,
+      "codificacion": "utf-8-sig"
+    },
+    {
+      "archivo": "QQP_2026/05-2026_Q1.csv",
+      "filas": 2805,
+      "bytes": 898552,
+      "crc32": 1009409678,
+      "codificacion": "cp1252"
+    },
+    {
+      "archivo": "QQP_2026/05-2026_Q2.csv",
+      "filas": 4260,
+      "bytes": 1328928,
+      "crc32": 90438814,
+      "codificacion": "cp1252"
+    }
+  ]
+}

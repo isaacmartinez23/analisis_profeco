@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: dim_producto
+    description: >
+      Producto normalizado. Grano: producto + presentación + marca canónicos (llaves sin acentos ni
+      diferencias de mayúsculas). PK: producto_id (md5 de las tres llaves). Fuente: int_productos_sku y
+      mappings.presentaciones. Actualización: cada ejecución del pipeline.
+    columns:
+      - name: producto_id
+        description: md5(producto_key | presentacion_key | marca_key).
+        tests: [unique, not_null]
+      - name: unidad_base
+        description: kg, l o pieza. NULL si la presentación no pudo interpretarse.
+        tests:
+          - accepted_values: {arguments: {values: ["kg", "l", "pieza"]}}
+      - name: contenido_base
+        description: Contenido de la presentación en la unidad base.
+        tests:
+          - expression_is_true: {arguments: {expression: "contenido_base is null or contenido_base > 0"}}
+      - name: es_comparable
+        description: Verdadero si la presentación tiene unidad y contenido confiables (sin revisión pendiente).
+        tests: [not_null]
+      - name: articulo_id
+        description: Artículo de la canasta vigente al que pertenece, si cumple su regla.
+        tests:
+          - relationships:
+              arguments: {to: "ref('dim_canasta')", field: articulo_id}
+    tests:
+      - expression_is_true:
+          arguments: {expression: "not es_comparable or (unidad_base is not null and contenido_base > 0)"}
+
+  - name: dim_establecimiento
+    description: >
+      Establecimiento canónico. Grano: nombre comercial + dirección + estado + municipio normalizados.
+      PK: establecimiento_id. FK: geografia_id → dim_geografia.
+    columns:
+      - name: establecimiento_id
+        tests: [unique, not_null]
+      - name: geografia_id
+        tests:
+          - not_null
+          - relationships: {arguments: {to: "ref('dim_geografia')", field: geografia_id}}
+      - name: cadena_key
+        tests: [not_null]
+
+  - name: dim_geografia
+    description: Municipio normalizado. PK geografia_id = md5(estado_key | municipio_key).
+    columns:
+      - name: geografia_id
+        tests: [unique, not_null]
+    tests:
+      - unique_combination: {arguments: {columns: ["estado_key", "municipio_key"]}}
+
+  - name: dim_fecha
+    description: Calendario diario entre la primera y última fecha observada. Semanas ISO (lunes).
+    columns:
+      - name: fecha
+        tests: [unique, not_null]
+      - name: semana_inicio
+        tests:
+          - not_null
+          - expression_is_true: {arguments: {expression: "dia_semana_iso between 1 and 7"}}
+
+  - name: dim_canasta
+    description: Artículos de canasta por versión (seed canasta_articulos). PK canasta_version + articulo_id.
+    tests:
+      - unique_combination: {arguments: {columns: ["canasta_version", "articulo_id"]}}

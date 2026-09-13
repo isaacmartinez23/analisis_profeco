@@ -1,0 +1,3 @@
+presentacion_key,decision,unidad_base,contenido_base,subtipo_conteo,decidido_por,fecha,justificacion
+BOLSA 3.564 GR. POLVO. LIMPIEZA INSTANTANEA,confirmar,,,,"propuesta del asistente (Claude), validar en Fase 2",2026-09-12,"Detergente en polvo: 3.564 g es implausible para una bolsa; se interpreta el punto como separador de miles (3,564 g = 3.564 kg). Confirmar contra el precio observado en Fase 2."
+BOLSA 3.564 GR. POLVO. OXIGENO ACTIVO,confirmar,,,,"propuesta del asistente (Claude), validar en Fase 2",2026-09-12,"Mismo caso que la variante Limpieza Instantánea: 3,564 g = 3.564 kg."

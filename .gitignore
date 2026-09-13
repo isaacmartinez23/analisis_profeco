@@ -1,0 +1,27 @@
+# Entornos y caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Credenciales
+.env
+transform/profiles.yml
+
+# Datos: los originales y derivados pesados no se versionan
+data/raw/*
+data/interim/
+data/processed/*.duckdb
+data/processed/*.duckdb.wal
+data/processed/*.parquet
+data/processed/muestra/
+reports/.calidad_*.parquet
+
+# dbt
+transform/target/
+transform/.user.yml
+transform/dbt_packages/
+transform/logs/
+logs/

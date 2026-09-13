@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: mart_canasta_semanal
+    description: >
+      Costo semanal de la canasta de referencia por cadena y municipio. Grano: versión × cadena × municipio ×
+      semana (ventana móvil de 14 días, D-010). costo_canasta solo existe si la canasta está completa.
+      Responde: ¿cuánto cuesta la misma canasta en distintas cadenas y municipios, y cómo cambia por semana?
+    tests:
+      - unique_combination:
+          arguments: {columns: ["canasta_version", "cadena_key", "geografia_id", "semana_inicio"]}
+      - expression_is_true:
+          arguments: {expression: "articulos_disponibles between 1 and articulos_totales"}
+      - expression_is_true:
+          arguments: {expression: "es_canasta_completa = (articulos_disponibles = articulos_totales)"}
+      - expression_is_true:
+          arguments: {expression: "(costo_canasta is not null) = es_canasta_completa"}
+    columns:
+      - name: costo_canasta
+        description: Suma del costo de todos los artículos; NULL si falta alguno.
+        tests:
+          - expression_is_true: {arguments: {expression: "costo_canasta is null or costo_canasta > 0"}}
+      - name: n_observaciones
+        description: Observaciones de precio usadas en la ventana (publicada junto con la métrica).
+        tests: [not_null]
+      - name: cadena
+        tests: [not_null]
+      - name: municipio
+        tests: [not_null]

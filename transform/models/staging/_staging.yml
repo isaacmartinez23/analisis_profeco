@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_qqp__precios
+    description: >
+      Precios crudos con tipos convertidos. Grano: una fila por línea de CSV. No filtra ni deduplica;
+      las filas con precio o fecha no convertibles quedan con NULL y las mide la regla de calidad R-03/R-05.
+    columns:
+      - name: precio
+        description: Precio en MXN por la presentación completa, convertido a decimal(12,2).
+        tests:
+          - not_null:
+              config: {severity: error, error_if: ">0"}
+      - name: precio_original
+        description: Texto original del precio.
+      - name: fecha
+        description: Fecha de levantamiento interpretada con el formato de su archivo.
+        tests: [not_null]
+      - name: archivo_origen
+        tests: [not_null]

@@ -1,0 +1,21 @@
+version,articulo_id,articulo,grupo,producto_key,incluye_regex,excluye_regex,unidad_base,subtipo_conteo,cantidad_referencia,unidad_referencia,fuente_cantidad
+v0,TORTILLA_MAIZ,Tortilla de maíz a granel,Cereales y derivados,TORTILLA DE MAIZ,GRANEL,,kg,,1,1 kg,presentacion_modal_observada
+v0,HUEVO_BLANCO,Huevo blanco,Proteína animal,HUEVO,\bBLANCO\b,GRANEL,pieza,PIEZA,18,18 piezas,presentacion_modal_observada
+v0,LECHE_ENTERA,Leche ultrapasteurizada entera,Lácteos,LECHE ULTRAPASTEURIZADA,\bENTERA\b,DESLACTOSADA|LIGHT|DESCREMADA|SABOR|CHOCO|FRESA|VAINILLA,l,,1,1 litro,presentacion_modal_observada
+v0,FRIJOL_NEGRO,Frijol negro,Leguminosas,FRIJOL,\bNEGRO\b,,kg,,1,1 kg,presentacion_modal_observada
+v0,ARROZ_SUPER_EXTRA,Arroz súper extra,Cereales y derivados,ARROZ,SUPER EXTRA,INTEGRAL|PRECOCIDO|SABOR,kg,,1,1 kg,presentacion_modal_observada
+v0,ACEITE_VEGETAL,Aceite vegetal comestible,Grasas,ACEITE,\bVEGETAL\b,SABOR|OLIVA|SPRAY|AEROSOL,l,,1,1 litro,presentacion_modal_observada
+v0,AZUCAR_ESTANDAR,Azúcar estándar,Endulzantes,AZUCAR,ESTANDAR,MASCABADO|REFINADA|SOBRES,kg,,1,1 kg,presentacion_modal_observada
+v0,PASTA_SOPA,Pasta para sopa,Cereales y derivados,PASTA PARA SOPA,.,INTEGRAL|RELLENA,kg,,0.2,200 g,presentacion_modal_observada
+v0,ATUN_AGUA,Atún en agua,Proteína animal,ATUN,EN AGUA,ACEITE|SOYA|ENSALADA|CHIPOTLE|MAYONESA|VERDURAS,kg,,0.14,140 g,presentacion_modal_observada
+v0,JITOMATE_SALADETTE,Jitomate saladette,Frutas y verduras,JITOMATE,SALADETTE,PRIMERA|SEGUNDA|TERCERA|EXPORTACION,kg,,1,1 kg,presentacion_modal_observada
+v0,CEBOLLA_BLANCA,Cebolla blanca,Frutas y verduras,CEBOLLA,\bBLANCA\b,,kg,,1,1 kg,presentacion_modal_observada
+v0,PAPA_BLANCA,Papa alfa o blanca,Frutas y verduras,PAPA,ALFA|BLANCA,,kg,,1,1 kg,presentacion_modal_observada
+v0,PLATANO_TABASCO,Plátano tabasco,Frutas y verduras,PLATANO,TABASCO,,kg,,1,1 kg,presentacion_modal_observada
+v0,LIMON_SIN_SEMILLA,Limón sin semilla (persa),Frutas y verduras,LIMON,SIN SEMILLA,,kg,,1,1 kg,presentacion_modal_observada
+v0,POLLO_PIERNA,Pierna de pollo,Proteína animal,CARNE POLLO,PIERNA,MUSLO,kg,,1,1 kg,presentacion_modal_observada
+v0,RES_MOLIDA,Carne de res molida especial,Proteína animal,CARNE RES,MOLIDA ESPECIAL,,kg,,1,1 kg,presentacion_modal_observada
+v0,HARINA_MAIZ,Harina de maíz,Cereales y derivados,HARINA DE MAIZ,^PAQUETE,FECULA,kg,,1,1 kg,presentacion_modal_observada
+v0,JABON_LAVANDERIA,Jabón de pasta para lavandería,Limpieza e higiene,JABON DE PASTA,^BARRA,,kg,,0.4,400 g,presentacion_modal_observada
+v0,PAPEL_HIGIENICO,Papel higiénico de 200 hojas dobles,Limpieza e higiene,PAPEL HIGIENICO,200 HOJAS DOBLES,,pieza,ROLLO,4,4 rollos,presentacion_modal_observada
+v0,DETERGENTE_POLVO,Detergente en polvo para ropa,Limpieza e higiene,DETERGENTE P/ROPA,POLVO,,kg,,1,1 kg,presentacion_modal_observada

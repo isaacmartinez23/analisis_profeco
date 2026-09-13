@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: fct_precio_observado
+    description: >
+      Una observación de precio de un producto, en un establecimiento, en una fecha.
+      PK compuesta: producto_id + establecimiento_id + fecha + precio (dos precios distintos el mismo día
+      se conservan y se marcan con tiene_precio_en_conflicto). Conserva texto original, archivo, carga y
+      banderas de atípico. Ver docs/contrato_datos.md.
+    tests:
+      - unique_combination:
+          arguments:
+            columns: ["producto_id", "establecimiento_id", "fecha", "precio"]
+            usar_hash: true
+      - expression_is_true:
+          arguments: {expression: "es_atipico = (regla_calidad is not null) and es_atipico = (motivo_atipico is not null)"}
+      - expression_is_true:
+          arguments: {expression: "(precio_unitario is not null) = es_comparable"}
+    columns:
+      - name: producto_id
+        tests:
+          - not_null
+          - relationships: {arguments: {to: "ref('dim_producto')", field: producto_id}}
+      - name: establecimiento_id
+        tests:
+          - not_null
+          - relationships: {arguments: {to: "ref('dim_establecimiento')", field: establecimiento_id}}
+      - name: fecha
+        tests:
+          - not_null
+          - relationships: {arguments: {to: "ref('dim_fecha')", field: fecha}}
+      - name: precio
+        description: Precio observado en MXN por la presentación completa.
+        tests:
+          - not_null
+          - expression_is_true: {arguments: {expression: "precio > 0"}}
+      - name: precio_unitario
+        description: Precio por unidad base (kg, l o pieza); NULL si la presentación no es comparable.
+        tests:
+          - expression_is_true: {arguments: {expression: "precio_unitario is null or precio_unitario > 0"}}
+      - name: precio_original
+        tests: [not_null]
+      - name: presentacion_original
+        tests: [not_null]
+      - name: archivo_origen
+        tests: [not_null]
+      - name: id_carga
+        tests: [not_null]
+      - name: es_atipico
+        tests: [not_null]
+      - name: regla_calidad
+        tests:
+          - accepted_values: {arguments: {values: ["Q-ATIP-01", "Q-ATIP-02"]}}

@@ -1,0 +1,18 @@
+# Copia este archivo a transform/profiles.yml (lo hace `python -m src.cli setup`).
+# No contiene credenciales: la ruta y los límites de DuckDB vienen de variables de entorno
+# que fija src/cli.py a partir de src/config.py.
+qqp:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('QQP_DUCKDB_PATH') }}"
+      # Un modelo a la vez: cada modelo ya usa varios hilos dentro de DuckDB (D-004).
+      threads: 1
+      # Se aplican una sola vez al abrir la base. Como `settings`, dbt-duckdb los repetiría en cada
+      # conexión y DuckDB no permite cambiar temp_directory después de usarlo.
+      config_options:
+        threads: "{{ env_var('QQP_DUCKDB_THREADS', '4') }}"
+        memory_limit: "{{ env_var('QQP_DUCKDB_MEMORY_LIMIT', '8GB') }}"
+        temp_directory: "{{ env_var('QQP_DUCKDB_TEMP_DIR') }}"
+        preserve_insertion_order: false

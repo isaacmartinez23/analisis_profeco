@@ -1,0 +1,5 @@
+# Código y documentación con LF en todas las plataformas.
+* text=auto eol=lf
+
+# La muestra conserva byte a byte el formato físico de PROFECO (CRLF, BOM, Latin-1): nunca convertir.
+data/sample/csv/** -text

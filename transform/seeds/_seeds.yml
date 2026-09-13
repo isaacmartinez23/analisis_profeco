@@ -1,0 +1,56 @@
+version: 2
+
+seeds:
+  - name: catalogos
+    description: >
+      Catálogos de levantamiento de PROFECO y su bit en `catalogos_mask`. Una observación publicada en
+      varios catálogos se registra una sola vez con la unión de bits (D-006). Un catálogo nuevo en los
+      datos hace fallar la prueba de relación en staging.
+    config:
+      column_types: {catalogo: varchar, bit: integer, en_alcance_canasta: boolean}
+    columns:
+      - name: catalogo
+        tests: [unique, not_null]
+      - name: bit
+        tests: [unique, not_null]
+
+  - name: canasta_articulos
+    description: >
+      Definición versionada de los artículos de la canasta (D-009). Un producto normalizado pertenece a un
+      artículo si coincide `producto_key`, su unidad base (y subtipo de conteo, si aplica), su
+      `presentacion_key` cumple `incluye_regex` y no cumple `excluye_regex` (sintaxis RE2 de DuckDB).
+      `cantidad_referencia` está en la unidad base; en v0 es la presentación modal observada, un supuesto
+      documentado en docs/limitaciones.md.
+    config:
+      column_types:
+        version: varchar
+        articulo_id: varchar
+        articulo: varchar
+        grupo: varchar
+        producto_key: varchar
+        incluye_regex: varchar
+        excluye_regex: varchar
+        unidad_base: varchar
+        subtipo_conteo: varchar
+        cantidad_referencia: double
+        unidad_referencia: varchar
+        fuente_cantidad: varchar
+    columns:
+      - name: articulo_id
+        tests: [not_null]
+      - name: unidad_base
+        tests:
+          - accepted_values: {arguments: {values: ["kg", "l", "pieza"]}}
+      - name: cantidad_referencia
+        tests:
+          - expression_is_true: {arguments: {expression: "cantidad_referencia > 0"}}
+    tests:
+      - unique_combination: {arguments: {columns: ["version", "articulo_id"]}}
+
+  - name: cadenas_referencia
+    description: Cadenas nacionales de referencia para comparar la canasta (D-011).
+    config:
+      column_types: {cadena_key: varchar, cadena: varchar, grupo_empresarial: varchar}
+    columns:
+      - name: cadena_key
+        tests: [unique, not_null]

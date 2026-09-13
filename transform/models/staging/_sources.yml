@@ -1,0 +1,80 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Capa cruda cargada por src/ingest/load.py. Todo es texto; nunca se modifica.
+    schema: raw
+    tables:
+      - name: qqp_precios
+        description: Una fila por línea de datos de cada CSV de PROFECO, más archivo e identificador de carga.
+        columns:
+          - name: producto
+            tests: [not_null]
+          - name: presentacion
+            tests: [not_null]
+          - name: marca
+            tests: [not_null]
+          - name: catalogo
+            tests:
+              - not_null
+              - relationships: {arguments: {to: "ref('catalogos')", field: catalogo}}
+          - name: precio
+            tests: [not_null]
+          - name: fecha_registro
+            tests: [not_null]
+          - name: cadena_comercial
+            tests: [not_null]
+          - name: nombre_comercial
+            tests: [not_null]
+          - name: direccion
+            tests: [not_null]
+          - name: estado
+            tests: [not_null]
+          - name: municipio
+            tests: [not_null]
+          - name: archivo_origen
+            tests:
+              - not_null
+              - relationships: {arguments: {to: "source('raw', 'archivos')", field: archivo}}
+      - name: archivos
+        description: Un registro por CSV cargado, con CRC32, codificación y formato de fecha detectados.
+        columns:
+          - name: archivo
+            tests: [unique, not_null]
+          - name: formato_fecha
+            tests:
+              - accepted_values: {arguments: {values: ["yyyy/mm/dd", "dd/mm/yyyy"]}}
+      - name: cargas
+        description: Bitácora de ejecuciones de la ingesta.
+        columns:
+          - name: id_carga
+            tests: [unique, not_null]
+
+  - name: mappings
+    description: Mapeos de normalización generados por src/normalize/build.py (data/mappings/*.csv).
+    schema: mappings
+    tables:
+      - name: productos
+        columns:
+          - name: producto_original
+            tests: [unique, not_null]
+          - name: producto_key
+            tests: [not_null]
+      - name: marcas
+        columns:
+          - name: marca_original
+            tests: [unique, not_null]
+          - name: marca_key
+            tests: [not_null]
+      - name: presentaciones
+        columns:
+          - name: presentacion_original
+            tests: [unique, not_null]
+          - name: presentacion_key
+            tests: [not_null]
+          - name: unidad_base
+            tests:
+              - accepted_values: {arguments: {values: ["kg", "l", "pieza"]}}
+      - name: texto_correcciones
+        tests:
+          - unique_combination: {arguments: {columns: ["columna", "valor_original"]}}

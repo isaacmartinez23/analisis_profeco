@@ -1,0 +1,13 @@
+catalogo,bit,en_alcance_canasta
+Basicos,0,true
+Medicamentos,1,false
+Electrodomesticos,2,false
+Frutas y Legumbres,3,true
+Pacic,4,true
+Utiles Escolares,5,false
+Mercados,6,false
+Juguetes,7,false
+Pescados y Mariscos,8,false
+Navideños,9,false
+Especial,10,false
+Tenis,11,false

@@ -1,0 +1,66 @@
+columna,valor_original,valor_corregido,candidatos,metodo,requiere_revision
+direccion,13 de Enero. N?m. 217. Entre Niños Heroes y Av. Monterrey. Col. Primera de Mayo. Cp. 89400,13 de Enero. Núm. 217. Entre Niños Heroes y Av. Monterrey. Col. Primera de Mayo. Cp. 89400,1,auto_candidato_unico,False
+direccion,Benito Juárez 122. Entre Altamira y Álvaro Oreg?n. Col. Centro. Cp. 89000,,0,sin_candidato_unico,True
+direccion,Ciricote. Mz.32. Lt.01 Local 17 y 18. Jab?n 9 y Chaca. Col. Sm.- 23. Cp. 77500,Ciricote. Mz.32. Lt.01 Local 17 y 18. Jabín 9 y Chaca. Col. Sm.- 23. Cp. 77500,1,auto_candidato_unico,False
+giro,Jugueter?as,Jugueterías,1,auto_candidato_unico,False
+giro,Papeler?as,Papelerías,1,auto_candidato_unico,False
+marca,Azor. Aquarelo D?o,Azor. Aquarelo Dúo,1,auto_candidato_unico,False
+marca,Bic. Evolution ? Kids,Bic. Evolution Ó Kids,1,auto_candidato_unico,False
+marca,D?héctor,D´héctor,1,auto_candidato_unico,False
+marca,Elmer?s. Disappearing Purple School Glue,Elmer´s. Disappearing Purple School Glue,1,auto_candidato_unico,False
+marca,Elmer?s. School Glue,Elmer´s. School Glue,1,auto_candidato_unico,False
+marca,Larousse. B?sico,Larousse. Básico,1,auto_candidato_unico,False
+marca,Larousse. B?sico Escolar,Larousse. Básico Escolar,1,auto_candidato_unico,False
+marca,Larousse. B?sico. Lengua Española,Larousse. Básico. Lengua Española,1,auto_candidato_unico,False
+marca,"Larousse. Sin?nimos, Ant?nimos e Ideas Afines","Larousse. Sinónimos, Antónimos e Ideas Afines",1,auto_candidato_unico,False
+marca,Maped. Black?peps,Maped. Black´peps,1,auto_candidato_unico,False
+marca,Maped. Color? Peps,Maped. Color´ Peps,1,auto_candidato_unico,False
+marca,Maped. Color?peps. Duo Colors,Maped. Color´peps. Duo Colors,1,auto_candidato_unico,False
+marca,Maped. Color?peps. Ocean,Maped. Color´peps. Ocean,1,auto_candidato_unico,False
+marca,Maped. Color?peps. Star,Maped. Color´peps. Star,1,auto_candidato_unico,False
+marca,Maped. Kidy?grip,Maped. Kidy´grip,1,auto_candidato_unico,False
+marca,Maped. Ne?n,Maped. Neón,1,auto_candidato_unico,False
+marca,Maped. Twist?n Flex. The Original,Maped. Twist´n Flex. The Original,1,auto_candidato_unico,False
+marca,Scribe. Polycover. 2053 (pasta de Pl?stico),Scribe. Polycover. 2053 (pasta de Plástico),1,auto_candidato_unico,False
+nombre_comercial,Coppel Sucursal Col?n (1360),Coppel Sucursal Colón (1360),1,auto_candidato_unico,False
+nombre_comercial,Mercado Atizap?n,Mercado Atizapán,1,auto_candidato_unico,False
+nombre_comercial,Mercer?a y Manualidades de Baja California Sur,Mercería y Manualidades de Baja California Sur,1,auto_candidato_unico,False
+nombre_comercial,Papeler?a Mar?n Sucursal Juaréz,Papelería Marón Sucursal Juaréz,1,auto_candidato_unico,False
+nombre_comercial,Papeler?a Robert?s,Papelería Robert´s,1,auto_candidato_unico,False
+nombre_comercial,Papeler?a San José,Papelería San José,1,auto_candidato_unico,False
+nombre_comercial,Papeler?as Grand Marchand Sucursal Florencia,Papelerías Grand Marchand Sucursal Florencia,1,auto_candidato_unico,False
+nombre_comercial,Pescadería Mu?oz Matriz,,0,sin_candidato_unico,True
+nombre_comercial,Pescadería Puerto ?ngel,Pescadería Puerto Ángel,1,auto_candidato_unico,False
+nombre_comercial,Pescadería Vi?a del Mar,,0,sin_candidato_unico,True
+presentacion,(?84wd). 1 Pza,,0,sin_candidato_unico,True
+presentacion,427827-euc. Rainbow High. Sparkle & Shine. Clementine o Rosetta o Viola o ?,,0,sin_candidato_unico,True
+presentacion,985761 Euc. L.o.l. Surprise! O.m.g. Uptown Girl o Pink Chick o Roller Chick o ?,,0,sin_candidato_unico,True
+presentacion,Art. 700016649 o Art. Nfn 43000. Nenuco. ¿qué Comemos Hoy?,,0,sin_candidato_unico,True
+presentacion,Art. 700016670. Nenuco. ¿un Eructito?,,0,sin_candidato_unico,True
+presentacion,Art. 700017360. Nenuco. ¿estás Bien Tapadito?,,0,sin_candidato_unico,True
+presentacion,Art. Nac 68000. Nancy. ¿qué Hay en Mi Bolso?,,0,sin_candidato_unico,True
+presentacion,Art. Nfn99000. Nenuco. ¿jugamos a Adivinar?,,0,sin_candidato_unico,True
+presentacion,Blister 1 Pieza. Básica. Ms-120 Fm (carcasa Met?lica),Blister 1 Pieza. Básica. Ms-120 Fm (carcasa Metálica),1,auto_candidato_unico,False
+presentacion,Bolsa 900 Gr. Polvo. Poder Activo?,,0,sin_candidato_unico,True
+presentacion,Botella 750 Ml. Especialidades. Reparación (néctar de Miel?),,0,sin_candidato_unico,True
+presentacion,C.b. 015428. ¿quién Es la Máscara? el Juego,,0,sin_candidato_unico,True
+presentacion,C2124. Adivina Quién? ¡ el Juego Original de Adivinar al Personaje!,,0,sin_candidato_unico,True
+presentacion,Caja 12 Piezas. C.b. 7415045 ? C.b. 415069. Largo,Caja 12 Piezas. C.b. 7415045 Ó C.b. 415069. Largo,1,auto_candidato_unico,False
+presentacion,Caja 12 Piezas. Gratis 2 L?pices. Largo,Caja 12 Piezas. Gratis 2 Lápices. Largo,1,auto_candidato_unico,False
+presentacion,Caja 12 Piezas. Punta Gruesa 4 Mm. C.b. 261129 ? 470729. Largo,Caja 12 Piezas. Punta Gruesa 4 Mm. C.b. 261129 Ó 470729. Largo,1,auto_candidato_unico,False
+presentacion,Caja 24 Piezas. Gratis 2 L?pices. Largo,Caja 24 Piezas. Gratis 2 Lápices. Largo,1,auto_candidato_unico,False
+presentacion,Caja con 30 Cápsulas de 0.25 ?g.,Caja con 30 Cápsulas de 0.25 Μg.,1,auto_candidato_unico,False
+presentacion,Caja con Dispositivo Inhalador con 60 Dosis. 50 ?g./250 ?g.,Caja con Dispositivo Inhalador con 60 Dosis. 50 Μg./250 Μg.,1,auto_candidato_unico,False
+presentacion,Caja con Frasco 120 Disparos. Suspensión 27.5 ?g./50 ?l.,Caja con Frasco 120 Disparos. Suspensión 27.5 Μg./50 Μl.,1,auto_candidato_unico,False
+presentacion,Caja o Paquete 20 Piezas. Plum?n Delgado. Mod. 58-8106,Caja o Paquete 20 Piezas. Plumín Delgado. Mod. 58-8106,1,auto_candidato_unico,False
+presentacion,Dhb63. Barbie. You Can Be Anything. Dentista o Maestra o Pediatra o?,,0,sin_candidato_unico,True
+presentacion,E0703 Asst. Transformers. Dinobot Sludge o?,,0,sin_candidato_unico,True
+presentacion,F6105. Adivina Quién? ¡ el Juego Original de Adivinar al Personaje!,,0,sin_candidato_unico,True
+presentacion,"F6743. Furby, ¿quieres Ser Mi Mejor Amigo?",,0,sin_candidato_unico,True
+presentacion,Hlw02. Disney Princess. Aurora o Blanca Nieves o Rapunzel o?,,0,sin_candidato_unico,True
+presentacion,Hpd53. Monster High. Looks Monstruosos. Draculaura Ó Frankie Stein Ó ?,,0,sin_candidato_unico,True
+presentacion,Jbg73. Monster High. Scary Sweet Birthday. Draculaura Ó Frankie Stein Ó ?,,0,sin_candidato_unico,True
+presentacion,Paquete 500 Hojas Bond. Tamaño Carta. 75 G/m3. Multiprop?sito. Clave 3542,Paquete 500 Hojas Bond. Tamaño Carta. 75 G/m3. Multipropósito. Clave 3542,1,auto_candidato_unico,False
+presentacion,Paquete 500 Hojas. Tamaño Carta. 75 G/m2. Premium Multiprop?sito,Paquete 500 Hojas. Tamaño Carta. 75 G/m2. Premium Multipropósito,1,auto_candidato_unico,False
+presentacion,"Pieza. 110,000 Sin?nimos y 18,000 Ant?nimos. Pasta Flexible. C.b. 200277","Pieza. 110,000 Sinónimos y 18,000 Antónimos. Pasta Flexible. C.b. 200277",1,auto_candidato_unico,False
+producto,Jaib?n,Jaibón,1,auto_candidato_unico,False
