@@ -191,6 +191,89 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
   `decidido_por = propuesta del asistente (Claude), validar en Fase 2`.
 - **Consecuencias:** El flujo manual queda demostrado sin presentar una propuesta automática como validación humana.
 
+## D-022 · Canasta v1: 16 alimentos (aprobada)
+
+- **Fecha:** 2026-09-12 · **Fase:** 2 · **Aprobó:** responsable del proyecto
+- **Contexto:** Con v0 solo 50.7% de las celdas de referencia tenían la canasta completa (Chedraui 28%). Se
+  evaluaron definiciones alternativas por cobertura y homogeneidad de precio entre cadenas, y composiciones por
+  completitud y por municipio-semanas donde se pueden comparar al menos dos cadenas (evidencia reproducible en
+  `reports/seleccion_canasta.md`). Presentado al aprobar:
+
+  | Composición | Celdas completas | Municipio-semanas comparables |
+  |---|---|---|
+  | v0 (20) | 50.7% | 50.6% |
+  | 19 con limpieza | 72.7% | 77.1% |
+  | **16 alimentos con res (v1)** | **81.0%** | **85.2%** |
+  | 15 sin res | 89.7% | 90.4% |
+
+- **Decisión:**
+  - Pierna de pollo → **pollo entero** (cobertura ≥96.9% en las 4 cadenas; medianas $44–49/kg). Se descartó
+    "pierna o muslo" por mezclar calidades (medianas $60–89/kg); se excluye pollo amarillo.
+  - Carne molida especial → **milanesa de res** (74.6% mínima frente a 39%; medianas $218–229/kg). Se descartó
+    "molida de cualquier grado" por mezclar 80/20 y 90/10.
+  - Se retiran harina de maíz (la tortilla ya representa el maíz) y jabón, detergente y papel higiénico.
+  - v0 se conserva en el seed; `canasta_version = v1` en `dbt_project.yml`.
+- **Consecuencias:** La canasta es alimentaria; el costo no incluye limpieza ni higiene. Cambiar de versión
+  recalcula todos los marts.
+
+## D-023 · Ahorro como comparación pareada en la misma celda
+
+- **Contexto:** Comparar el costo mediano nacional de cada cadena mezcla ciudades distintas (en la Fase 1 cada cadena
+  tenía canasta completa en conjuntos diferentes de municipios).
+- **Decisión:** `mart_ahorro_por_cadena` solo compara cadenas de referencia con canasta completa y ventana completa
+  en el mismo municipio y semana, con al menos dos cadenas. `mart_precio_producto` descompone ese ahorro por
+  artículo y una prueba verifica que la descomposición suma el ahorro total.
+- **Consecuencias:** Los municipio-semanas sin dos canastas completas no aportan a métricas de ahorro; su cobertura se
+  reporta en `mart_cobertura_datos` y en `reports/resultados_canasta.md`.
+
+## D-024 · Validación independiente como compuerta del pipeline
+
+- **Contexto:** Las pruebas dbt verifican consistencia interna, pero no que el cálculo sea correcto desde los datos
+  crudos.
+- **Decisión:** `src/analysis/validacion.py` recalcula en Python (normalización, reglas de canasta, consolidación y
+  medianas) el costo y el ahorro de 6 municipio-semanas deterministas y los compara con los marts. Es un paso de
+  `pipeline` y detiene la publicación si hay diferencias.
+- **Consecuencias:** Omite celdas con atípicos (la detección usa estadísticas de todo el periodo). Comparte con el
+  pipeline el parser de presentaciones y los mapeos versionados, que tienen sus propias pruebas.
+
+## D-025 · Atípicos y decisiones manuales validados con datos
+
+- **Contexto:** Pendientes de la Fase 1 (D-018, D-020).
+- **Decisión:** Se mantienen las reglas de atípicos: en artículos de canasta hay 119 observaciones marcadas y solo 4
+  en cadenas de referencia; no se concentran en martes (se descarta el sesgo por "Martes de Frescura"); la mayoría
+  son pierna de pollo a ~$24/kg en Tijuana y Juárez (2024) frente a una mediana de $84. Las bolsas de detergente
+  "3.564 Gr." cuestan $160 ($44.89/kg), igual que la bolsa de 1 kg ($44.90/kg): se confirma 3.564 kg.
+- **Consecuencias:** Las decisiones manuales siguen marcadas como propuesta del asistente, ahora con evidencia; el
+  detergente ya no forma parte de la canasta v1.
+
+## D-026 · Evolución con índice directo de panel fijo, no encadenado
+
+- **Contexto:** El primer reporte usaba un índice encadenado (mediana del cambio semanal de pares cadena-municipio).
+  Mostraba una caída a ~94 a fines de 2025. Contra un índice directo con panel fijo (mismos pares, costo frente a
+  su propio periodo base), el encadenado terminaba 3 puntos abajo (98.9 frente a 101.9): la mediana de razones
+  encadenada acumula deriva con datos ruidosos.
+- **Decisión:** La evolución se mide con un índice directo: pares cadena-municipio con canasta completa en las
+  primeras 8 semanas; cada semana, media geométrica de costo / costo base de los pares presentes.
+- **Consecuencias:** Sin deriva por encadenamiento; el panel pierde pares si una cadena deja de tener canasta completa
+  en un municipio (se publica el número de pares).
+
+## D-027 · Nivel de precios municipal controlando la mezcla de cadenas
+
+- **Contexto:** Ordenar municipios por costo mediano favorece a los municipios donde solo se mide una cadena barata
+  (Álvaro Obregón aparecía como barato sin tener semanas comparables).
+- **Decisión:** Nivel municipal = media geométrica, entre las cadenas presentes, del costo de la cadena en el
+  municipio entre su mediana nacional (100 = nacional).
+- **Consecuencias:** Compara cada cadena consigo misma; se publica cuántas cadenas respaldan el nivel.
+
+## D-028 · Variantes de nombre de cadena y giro con corrección manual
+
+- **Contexto:** Además de acentos y `?`, hay variantes con otra letra: `Central de Abastos`/`Central de Abasto` (57 y
+  152 tiendas) y `Tienda Departamentales`/`Tiendas Departamentales`. Una búsqueda por distancia de edición ≤ 2 no
+  encontró otras variantes seguras (Papelería Dabo/Dany/Tony son negocios distintos).
+- **Decisión:** `texto_correcciones_manual.csv` admite correcciones de valores sin `?`; se registran las dos variantes
+  como propuesta del asistente. No afectan a las cadenas de referencia.
+- **Consecuencias:** Cobertura por cadena sin duplicar la central de abasto.
+
 ## D-021 · Medianas exactas para resultados deterministas
 
 - **Contexto:** Con `approx_quantile`, dos ejecuciones idénticas dieron 0.0357% y 0.0356% de atípicos y 50.744% y

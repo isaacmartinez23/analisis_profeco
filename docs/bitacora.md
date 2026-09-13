@@ -171,4 +171,81 @@ Ninguno de los incidentes dañó datos: la ingesta es transaccional y los modelo
 - Validar las dos decisiones manuales propuestas por el asistente (D-020).
 - Comparación pareada de cadenas en el mismo municipio y semana; marts de ahorro, precio por producto y cobertura.
 
-**Fase 1 lista para aprobación.**
+**Fase 1 lista para aprobación.** Aprobada por el responsable del proyecto el 2026-09-12; commit inicial `48838ea`.
+
+---
+
+## 2026-09-12 · Fase 2 — Análisis
+
+### Pendientes de Fase 1 resueltos con datos (D-025)
+
+| Pendiente | Evidencia | Resultado |
+|---|---|---|
+| Detergente `Bolsa 3.564 Gr.` | $160 por bolsa = $44.89/kg; bolsa de 1 kg = $44.90/kg; bolsa de 5 kg = $39.20/kg | Se confirma 3.564 kg |
+| ¿Atípicos que son ofertas? | 119 observaciones marcadas en artículos de canasta; 4 en cadenas de referencia; sin concentración en martes | Se mantienen las reglas |
+
+### Definición de la canasta (D-022, aprobada)
+
+- Evaluación de 17 definiciones de artículo y 7 composiciones (`reports/seleccion_canasta.md`,
+  `python -m src.cli seleccion-canasta`).
+- Aprobada la **v1 de 16 alimentos**: pollo entero en lugar de pierna, milanesa de res en lugar de molida especial,
+  sin harina de maíz ni limpieza. Completitud de celdas de referencia: 50.7% → 81.0%; municipio-semanas comparables:
+  50.6% → 85.2%.
+
+### Construido
+
+| Componente | Entregable |
+|---|---|
+| Ahorro | `marts.mart_ahorro_por_cadena` (comparación pareada, D-023) |
+| Diferencias por producto | `marts.mart_precio_producto` (descomposición del ahorro por artículo) |
+| Cobertura | `marts.mart_cobertura_datos` |
+| Validación manual | `src/analysis/validacion.py` → `reports/validacion_canasta.md`, paso `validate` del pipeline (D-024) |
+| Respuestas de negocio | `src/analysis/resultados.py` → `reports/resultados_canasta.md`, paso `resultados` |
+| Métricas | `docs/catalogo_metricas.md` |
+| Calidad | M-07 (municipio-semanas comparables), 20 pruebas dbt nuevas |
+
+### Validación manual de resultados
+
+1. **Recálculo independiente en Python**: 6 municipio-semanas, 24 comparaciones cadena-celda: 24 coinciden al centavo
+   en costo y ahorro.
+2. **Descomposición**: la suma por artículo reproduce el ahorro de cada cadena (prueba dbt).
+3. **Revisión crítica de los primeros resultados**, que llevó a tres correcciones:
+   - Índice encadenado con deriva de ~3 puntos → índice directo de panel fijo (D-026).
+   - Ranking de municipios sesgado por la mezcla de cadenas → nivel de precios que compara cada cadena consigo
+     misma, con al menos 2 cadenas (D-027).
+   - Estado mostrado sin acento en un municipio sin datos recientes → nombre elegido a nivel estado.
+4. **Municipios sin comparación**: se verificó que no es un error (p. ej. Toluca tiene 52 tiendas pero solo 1 de
+   cadena de referencia).
+5. **Variantes de nombre**: búsqueda por distancia de edición; dos variantes corregidas (D-028).
+
+### Resultados principales (datos completos, canasta v1, 2024-01 a 2026-05)
+
+- 5,230 municipio-semanas comparables en 51 municipios.
+- Ahorro máximo mediano al pasar de la cadena más cara a la más barata del mismo municipio y semana: **$49.52
+  (6.8%)** por canasta; con las 4 cadenas presentes, $64.50 (8.9%).
+- Frecuencia como cadena más barata en sus celdas comparables: Chedraui 69.8%, Bodega Aurrera 35.0%, Hipermercado
+  Soriana 32.3%, Wal-mart 23.9%.
+- Artículos que más explican las diferencias: milanesa de res (21%), limón (17%), jitomate (13%), cebolla (12%) y
+  papa (10%).
+- Índice directo de la canasta: 100 → 102.1 en mayo de 2026, con un mínimo de 95.6 (mayo 2024) y un máximo de 104.0
+  (abril 2026).
+- Nivel de precios entre ciudades con ≥2 cadenas: 96.9 a 102.1; elegir cadena pesa más que la ciudad.
+
+### Pruebas ejecutadas
+
+| Comando | Resultado |
+|---|---|
+| `python -m src.cli pipeline --desde normalize` (datos completos) | Código 0 en 143 s |
+| `dbt run` / `dbt test` | 16/16 modelos, 130/130 pruebas |
+| Reglas de calidad | 10 raw + 7 marts cumplen (M-04 81.0%, M-07 85.2%) |
+| `validate` | 24/24 coincidencias |
+| `pytest -q` | 55 pruebas pasan |
+| `ruff check .` | Sin errores |
+
+### Riesgos y pendientes
+
+- Decisiones manuales propuestas por el asistente pendientes de validación humana (D-025, D-028).
+- Representatividad: mediana de 1 tienda y 1 día por celda (L-17); la canasta genérica mezcla marcas (L-18).
+- Siguiente fase: publicación en Supabase, vistas para Looker Studio, GitHub Actions y alertas.
+
+**Fase 2 lista para aprobación.**

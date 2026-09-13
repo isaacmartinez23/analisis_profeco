@@ -1,6 +1,6 @@
 # Reporte de calidad de datos
 
-_Generado por `python -m src.quality.checks` el 2026-09-12 18:34 · modo `completo` · base `qqp.duckdb`._
+_Generado por `python -m src.quality.checks` el 2026-09-12 19:11 · modo `completo` · base `qqp.duckdb`._
 
 Severidad `error` detiene el pipeline y bloquea la publicación; `advertencia` se reporta sin detenerlo.
 Definiciones y justificación de umbrales: `docs/reglas_calidad.md`.
@@ -24,13 +24,14 @@ Definiciones y justificación de umbrales: `docs/reglas_calidad.md`.
 
 ## Modelo transformado (`marts`)
 
-6 reglas · 0 fallas · 0 alertas
+7 reglas · 0 fallas · 0 alertas
 
-| id   | regla                                              | severidad   |   valor | condicion   | resultado   | descripcion                                                                                                  |
-|:-----|:---------------------------------------------------|:------------|--------:|:------------|:------------|:-------------------------------------------------------------------------------------------------------------|
-| M-01 | observaciones_atipicas_pct                         | advertencia |  0.036  | <= 1        | cumple      | % de observaciones marcadas como atípicas (Q-ATIP-01/02).                                                    |
-| M-02 | observaciones_atipicas_pct_maximo                  | error       |  0.036  | <= 5        | cumple      | % de observaciones atípicas por encima del cual el pipeline se detiene (posible error sistemático).          |
-| M-03 | observaciones_no_comparables_catalogos_canasta_pct | advertencia |  2.4591 | <= 5        | cumple      | % de observaciones de catálogos de canasta (Básicos, Frutas y Legumbres, Pacic) sin presentación comparable. |
-| M-04 | celdas_referencia_canasta_completa_pct             | advertencia | 50.7494 | >= 50       | cumple      | % de celdas cadena de referencia × municipio × semana (ventana completa) con la canasta completa.            |
-| M-05 | articulos_sin_observaciones_ultima_semana          | advertencia |  0      | == 0        | cumple      | Artículos de la canasta sin ninguna observación comparable en la última semana (cadenas de referencia).      |
-| M-06 | filas_crudas_sin_observacion                       | error       |  0      | == 0        | cumple      | Filas crudas con precio y fecha válidos que no llegaron a la tabla de hechos.                                |
+| id   | regla                                              | severidad   |   valor | condicion   | resultado   | descripcion                                                                                                                                                                           |
+|:-----|:---------------------------------------------------|:------------|--------:|:------------|:------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| M-01 | observaciones_atipicas_pct                         | advertencia |  0.036  | <= 1        | cumple      | % de observaciones marcadas como atípicas (Q-ATIP-01/02).                                                                                                                             |
+| M-02 | observaciones_atipicas_pct_maximo                  | error       |  0.036  | <= 5        | cumple      | % de observaciones atípicas por encima del cual el pipeline se detiene (posible error sistemático).                                                                                   |
+| M-03 | observaciones_no_comparables_catalogos_canasta_pct | advertencia |  2.4591 | <= 5        | cumple      | % de observaciones de catálogos de canasta (Básicos, Frutas y Legumbres, Pacic) sin presentación comparable.                                                                          |
+| M-04 | celdas_referencia_canasta_completa_pct             | advertencia | 80.9632 | >= 50       | cumple      | % de celdas cadena de referencia × municipio × semana (ventana completa) con la canasta completa.                                                                                     |
+| M-05 | articulos_sin_observaciones_ultima_semana          | advertencia |  0      | == 0        | cumple      | Artículos de la canasta sin ninguna observación comparable en la última semana (cadenas de referencia).                                                                               |
+| M-07 | municipio_semanas_comparables_pct                  | advertencia | 85.2069 | >= 70       | cumple      | % de municipio-semanas con al menos dos cadenas de referencia en la canasta (ventana completa) donde al menos dos tienen la canasta completa y por lo tanto se puede calcular ahorro. |
+| M-06 | filas_crudas_sin_observacion                       | error       |  0      | == 0        | cumple      | Filas crudas con precio y fecha válidos que no llegaron a la tabla de hechos.                                                                                                         |

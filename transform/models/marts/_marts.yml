@@ -27,3 +27,67 @@ models:
         tests: [not_null]
       - name: municipio
         tests: [not_null]
+
+  - name: mart_ahorro_por_cadena
+    description: >
+      Ahorro potencial al elegir la cadena de referencia más barata. Grano: versión × municipio × semana × cadena
+      de referencia, solo en municipio-semanas con al menos dos cadenas de referencia con canasta completa y
+      ventana completa (comparación pareada). Responde: ¿cuánto puede ahorrar una familia al elegir la cadena
+      más económica?
+    tests:
+      - unique_combination:
+          arguments: {columns: ["canasta_version", "geografia_id", "semana_inicio", "cadena_key"]}
+      - expression_is_true:
+          arguments: {expression: "cadenas_comparadas >= 2 and posicion between 1 and cadenas_comparadas"}
+      - expression_is_true:
+          arguments: {expression: "costo_minimo <= costo_canasta and costo_canasta <= costo_maximo"}
+      - expression_is_true:
+          arguments: {expression: "ahorro_vs_mas_barata >= 0 and ahorro_pct between 0 and 100"}
+      - expression_is_true:
+          arguments: {expression: "not es_mas_barata or ahorro_vs_mas_barata = 0"}
+    columns:
+      - name: costo_canasta
+        tests: [not_null]
+      - name: cadena_mas_barata
+        tests: [not_null]
+
+  - name: mart_precio_producto
+    description: >
+      Mediana de precio unitario y costo por artículo, cadena de referencia, municipio y semana. En celdas
+      comparables descompone el ahorro entre cadenas por artículo. Responde: ¿qué productos explican las
+      mayores diferencias de precio?
+    tests:
+      - unique_combination:
+          arguments: {columns: ["canasta_version", "geografia_id", "semana_inicio", "cadena_key", "articulo_id"]}
+      - expression_is_true:
+          arguments: {expression: "precio_unitario_minimo <= mediana_precio_unitario and mediana_precio_unitario <= precio_unitario_maximo"}
+      - expression_is_true:
+          arguments: {expression: "(diferencia_vs_cadena_mas_barata is not null) = es_celda_comparable"}
+    columns:
+      - name: costo_articulo
+        tests:
+          - not_null
+          - expression_is_true: {arguments: {expression: "costo_articulo > 0"}}
+      - name: articulo_id
+        tests:
+          - relationships: {arguments: {to: "ref('dim_canasta')", field: articulo_id}}
+
+  - name: mart_cobertura_datos
+    description: >
+      Cobertura por cadena, municipio y semana: observaciones, establecimientos, productos, días, atípicos,
+      presentaciones no comparables y disponibilidad de la canasta. Responde: ¿qué tan completa y
+      representativa es la información utilizada?
+    tests:
+      - unique_combination:
+          arguments: {columns: ["canasta_version", "cadena_key", "geografia_id", "semana_inicio"]}
+      - expression_is_true:
+          arguments: {expression: "n_observaciones > 0 and n_establecimientos > 0 and n_dias_con_observacion between 1 and 7"}
+      - expression_is_true:
+          arguments: {expression: "articulos_canasta_disponibles between 0 and articulos_canasta_totales"}
+      - expression_is_true:
+          arguments: {expression: "n_registros_origen >= n_observaciones"}
+    columns:
+      - name: cadena
+        tests: [not_null]
+      - name: municipio
+        tests: [not_null]

@@ -287,6 +287,22 @@ REGLAS_MARTS = [
         ),
     ),
     Regla(
+        "M-07",
+        "marts",
+        "municipio_semanas_comparables_pct",
+        "% de municipio-semanas con al menos dos cadenas de referencia en la canasta (ventana completa) donde al "
+        "menos dos tienen la canasta completa y por lo tanto se puede calcular ahorro.",
+        "advertencia",
+        ">=",
+        70.0,
+        _escalar(
+            """WITH celdas AS (
+                   SELECT geografia_id, semana_inicio, count(*) cadenas, sum(es_canasta_completa::INT) completas
+                   FROM marts.mart_canasta_semanal WHERE es_cadena_referencia AND ventana_completa GROUP BY ALL)
+               SELECT 100.0 * avg((completas >= 2)::INT) FROM celdas WHERE cadenas >= 2"""
+        ),
+    ),
+    Regla(
         "M-06",
         "marts",
         "filas_crudas_sin_observacion",

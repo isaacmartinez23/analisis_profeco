@@ -22,7 +22,7 @@ prioridad,tipo,columna,presentacion_key,valor,motivo,filas,en_alcance,ejemplo_pr
 21,presentacion,presentacion,BOTE 480 GR. (900 ML.) SABOR NAPOLITANO,Bote 480 Gr. (900 Ml.) Sabor Napolitano,dimensiones_mixtas,8139,True,Helado,kg,0.48
 22,presentacion,presentacion,ESTUCHE CON 2. MACH 3,Estuche con 2. Mach 3,sin_cantidad,5785,True,Repuestos de Navajas,,
 23,correccion_texto,presentacion,,Bolsa 900 Gr. Polvo. Poder Activo?,sin_candidato_unico,5123,True,Detergente P/ropa,,
-24,correccion_texto,presentacion,,Botella 750 Ml. Especialidades. Reparación (néctar de Miel?),sin_candidato_unico,3146,True,Shampoo,,
+24,correccion_texto,presentacion,,Botella 750 Ml. Especialidades. Reparación (néctar de Miel?),sin_candidato_unico,3146,True,Acondicionador y Enjuague,,
 25,presentacion,presentacion,BOTELLA 3.785 LT. ENTERA,Botella 3.785 Lt. Entera,separador_ambiguo,1357,True,Leche Pasteurizada,l,3.785
 26,presentacion,presentacion,BOTE 693 GR. (1.3 LT.) SABOR NAPOLITANO,Bote 693 Gr. (1.3 Lt.) Sabor Napolitano,dimensiones_mixtas,1002,True,Helado,kg,0.693
 27,presentacion,presentacion,BOTE 624 GR. (1.17 LT.) SABOR NAPOLITANO,Bote 624 Gr. (1.17 Lt.) Sabor Napolitano,dimensiones_mixtas,568,True,Helado,kg,0.624

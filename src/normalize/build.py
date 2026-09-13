@@ -81,13 +81,29 @@ def construir_correcciones(distintos: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "texto_correcciones_manual.csv",
         ["columna", "valor_original", "valor_corregido", "decidido_por", "fecha", "justificacion"],
     )
+    nuevas = []
     for _, m in manual.iterrows():
         mask = (auto["columna"] == m["columna"]) & (auto["valor_original"] == m["valor_original"])
-        auto.loc[mask, ["valor_corregido", "metodo", "requiere_revision"]] = [
-            m["valor_corregido"],
-            "manual",
-            False,
-        ]
+        if mask.any():
+            auto.loc[mask, ["valor_corregido", "metodo", "requiere_revision"]] = [
+                m["valor_corregido"],
+                "manual",
+                False,
+            ]
+        else:
+            # Variantes sin "?" (p. ej. "Central de Abastos" → "Central de Abasto") también se corrigen a mano.
+            nuevas.append(
+                {
+                    "columna": m["columna"],
+                    "valor_original": m["valor_original"],
+                    "valor_corregido": m["valor_corregido"],
+                    "candidatos": None,
+                    "metodo": "manual",
+                    "requiere_revision": False,
+                }
+            )
+    if nuevas:
+        auto = pd.concat([auto, pd.DataFrame(nuevas)], ignore_index=True)
     return auto.sort_values(["columna", "valor_original"]).reset_index(drop=True)
 
 

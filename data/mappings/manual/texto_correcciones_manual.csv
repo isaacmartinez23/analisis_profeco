@@ -1,0 +1,3 @@
+columna,valor_original,valor_corregido,decidido_por,fecha,justificacion
+cadena_comercial,Central de Abastos,Central de Abasto,"propuesta del asistente (Claude), validar",2026-09-12,"Misma cadena con plural variable (distancia de edición 1); 'Central de Abasto' es la forma mayoritaria (152 frente a 57 tiendas) y la usada hasta la última quincena."
+giro,Tienda Departamentales,Tiendas Departamentales,"propuesta del asistente (Claude), validar",2026-09-12,"Mismo giro con error de concordancia; la forma correcta es la mayoritaria (61 frente a 13 establecimientos)."

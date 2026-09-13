@@ -38,6 +38,14 @@ número incorrecto de columnas) y la ingesta rechaza formatos de fecha no recono
 | M-04 | Celdas cadena de referencia × municipio × semana con canasta completa | advertencia | ≥ 50% | Cobertura mínima para comparar cadenas; ver D-009 a D-012. |
 | M-05 | Artículos sin observaciones en la última semana | advertencia | = 0 | Un artículo que desaparece rompe la canasta completa. |
 | M-06 | Filas válidas que no llegaron a la tabla de hechos | error | = 0 | Garantiza que la consolidación no pierde registros. |
+| M-07 | Municipio-semanas con ≥2 cadenas de referencia donde ≥2 tienen canasta completa | advertencia | ≥ 70% | Base mínima para estimar ahorro con comparaciones pareadas (D-023). |
+
+## Validación independiente (compuerta)
+
+`python -m src.cli validate` (`src/analysis/validacion.py`) recalcula en Python, desde `raw.qqp_precios`, el costo de
+canasta y el ahorro de 6 municipio-semanas comparables y deterministas, y los compara con los marts (±0.011 MXN en
+costo, ±0.022 MXN en ahorro). Cualquier diferencia detiene el pipeline antes de publicar. Reporte:
+`reports/validacion_canasta.md` (D-024).
 
 ## Atípicos (marcados, nunca eliminados)
 
@@ -67,3 +75,6 @@ tabla de hechos para auditoría.
   `costo_canasta` presente ⇔ canasta completa.
 - **Conservación** (`transform/tests/`): toda combinación cruda está mapeada; suma de `n_registros_origen` = filas
   válidas de staging; una misma llave de presentación tiene una sola interpretación.
+- **Ahorro**: posición entre 1 y cadenas comparadas; costo entre mínimo y máximo; ahorro ≥ 0 y 0 en la más barata;
+  la suma por artículo de `diferencia_vs_cadena_mas_barata` reproduce el ahorro (`assert_descomposicion_ahorro`).
+- **Cobertura**: días con observación entre 1 y 7; registros de origen ≥ observaciones; artículos disponibles ≤ total.

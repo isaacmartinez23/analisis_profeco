@@ -11,7 +11,7 @@ target-path: "target"
 clean-targets: ["target", "dbt_packages", "logs"]
 
 vars:
-  canasta_version: "v0"
+  canasta_version: "v1"   # D-022: 16 alimentos. v0 se conserva en el seed como historial.
   # Reglas de atípicos (ver docs/reglas_calidad.md)
   atipico_factor_mediana: 10     # Q-ATIP-01: precio > 10× o < 1/10 de la mediana del producto
   atipico_umbral_mad: 5          # Q-ATIP-02: |log(precio) − mediana| > 5 × MAD escalada...

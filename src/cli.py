@@ -7,7 +7,8 @@ Uso::
     python -m src.cli <paso>              # setup | inspect | ingest | quality | normalize | dbt-run |
                                           # dbt-test | quality-marts | publish | sample | profile | test | clean
 
-Orden de `pipeline`: inspect → ingest → quality → normalize → dbt-run → dbt-test → quality-marts → publish.
+Orden de `pipeline`: inspect → ingest → quality → normalize → dbt-run → dbt-test → quality-marts → validate →
+resultados → publish. `seleccion-canasta` (análisis de composiciones alternativas) se ejecuta a demanda.
 Cualquier fallo detiene la ejecución con código distinto de cero; la publicación solo ocurre si todo lo
 anterior pasó y hay credenciales configuradas.
 """
@@ -131,6 +132,24 @@ def paso_quality_marts() -> None:
     checks.run(etapa="marts")
 
 
+def paso_validate() -> None:
+    from src.analysis import validacion
+
+    validacion.run()
+
+
+def paso_seleccion_canasta() -> None:
+    from src.analysis import seleccion_canasta
+
+    seleccion_canasta.run()
+
+
+def paso_resultados() -> None:
+    from src.analysis import resultados
+
+    resultados.run()
+
+
 def paso_publish() -> None:
     faltantes = [
         v
@@ -196,6 +215,9 @@ PASOS: dict[str, Callable[[], None]] = {
     "dbt-run": paso_dbt_run,
     "dbt-test": paso_dbt_test,
     "quality-marts": paso_quality_marts,
+    "validate": paso_validate,
+    "resultados": paso_resultados,
+    "seleccion-canasta": paso_seleccion_canasta,
     "publish": paso_publish,
     "sample": paso_sample,
     "profile": paso_profile,
@@ -212,6 +234,8 @@ PIPELINE = [
     "dbt-run",
     "dbt-test",
     "quality-marts",
+    "validate",
+    "resultados",
     "publish",
 ]
 

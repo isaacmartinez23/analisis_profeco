@@ -185,3 +185,61 @@ Columnas: `establecimiento_id`, `establecimiento_key`, `nombre_comercial`, `dire
 | `min_observaciones_por_articulo` | BIGINT | Artículo con menos respaldo |
 | `max_establecimientos_por_articulo` | BIGINT | Tiendas distintas del artículo con más cobertura |
 | `ventana_completa` | BOOLEAN | La ventana no está truncada por el inicio de la serie |
+
+## marts.mart_ahorro_por_cadena
+
+| Campo | Valor |
+|---|---|
+| Descripción | Ahorro potencial al elegir la cadena de referencia más barata, en comparación pareada. |
+| Grano | Versión × municipio × semana × cadena de referencia. |
+| Llave primaria | `canasta_version`, `geografia_id`, `semana_inicio`, `cadena_key` |
+| Llaves foráneas | `geografia_id` → `dim_geografia`; `cadena_key` → `seeds.cadenas_referencia` |
+| Fuente | `marts.mart_canasta_semanal` (solo canastas completas con ventana completa) |
+| Reglas | Unicidad; ≥2 cadenas comparadas; posición y ahorro coherentes; descomposición por artículo (D-023). |
+| Nulos | Ninguno: solo contiene celdas comparables. |
+| Supuestos | Empate en la más barata se resuelve por `cadena_key`. Walmart y Bodega Aurrera son el mismo grupo (`grupos_comparados`). |
+
+Columnas: `canasta_version VARCHAR`, `semana_inicio`, `semana_fin` (DATE), `geografia_id`, `estado`, `municipio`,
+`cadena_key`, `cadena`, `grupo_empresarial` (VARCHAR), `costo_canasta DOUBLE`, `posicion BIGINT`,
+`cadenas_comparadas`, `grupos_comparados` (BIGINT), `costo_minimo`, `costo_maximo`, `costo_mediano` (DOUBLE),
+`cadena_key_mas_barata`, `cadena_mas_barata`, `cadena_mas_cara` (VARCHAR), `es_mas_barata BOOLEAN`,
+`ahorro_vs_mas_barata`, `ahorro_pct`, `diferencia_vs_mediana_pct`, `brecha_max_min`, `brecha_pct` (DOUBLE),
+`n_observaciones BIGINT`.
+
+## marts.mart_precio_producto
+
+| Campo | Valor |
+|---|---|
+| Descripción | Precio unitario y costo por artículo de canasta y cadena de referencia; descompone el ahorro por artículo. |
+| Grano | Versión × municipio × semana × cadena de referencia × artículo. |
+| Llave primaria | `canasta_version`, `geografia_id`, `semana_inicio`, `cadena_key`, `articulo_id` |
+| Llaves foráneas | `articulo_id` → `dim_canasta`; `geografia_id` → `dim_geografia` |
+| Fuente | `intermediate.int_canasta_articulo_semanal`, `marts.mart_ahorro_por_cadena` |
+| Reglas | Unicidad; mínimo ≤ mediana ≤ máximo; `costo_articulo > 0`; diferencia presente ⇔ celda comparable; suma = ahorro. |
+| Nulos | `diferencia_vs_cadena_mas_barata` nulo fuera de celdas comparables. |
+| Supuestos | Mediana de cualquier marca comparable (L-10, L-18). |
+
+Columnas: `canasta_version`, `geografia_id`, `estado`, `municipio`, `cadena_key`, `cadena`, `articulo_id`, `articulo`,
+`grupo`, `unidad_base` (VARCHAR), `semana_inicio DATE`, `cantidad_referencia`, `mediana_precio_unitario`,
+`costo_articulo` (DOUBLE), `n_observaciones`, `n_establecimientos`, `n_productos`, `cadenas_con_articulo` (BIGINT),
+`precio_unitario_minimo`, `precio_unitario_maximo` (DOUBLE), `es_cadena_mas_barata_articulo BOOLEAN`,
+`diferencia_vs_minimo_pct DOUBLE`, `es_celda_comparable BOOLEAN`, `diferencia_vs_cadena_mas_barata DOUBLE`.
+
+## marts.mart_cobertura_datos
+
+| Campo | Valor |
+|---|---|
+| Descripción | Cobertura y representatividad de la información por cadena, municipio y semana. |
+| Grano | Versión × cadena × municipio × semana (todas las cadenas). |
+| Llave primaria | `canasta_version`, `cadena_key`, `geografia_id`, `semana_inicio` |
+| Llaves foráneas | `geografia_id` → `dim_geografia`; `cadena_key` → `dim_establecimiento.cadena_key` |
+| Fuente | `core.fct_precio_observado` (semana propia), `marts.mart_canasta_semanal` (ventana) |
+| Reglas | Unicidad; conteos positivos; días entre 1 y 7; registros ≥ observaciones; artículos ≤ total. |
+| Nulos | Ninguno (artículos disponibles = 0 si la cadena no tiene productos de la canasta). |
+| Supuestos | Las métricas de observación no usan ventana; la disponibilidad de canasta sí. |
+
+Columnas: `canasta_version VARCHAR`, `semana_inicio`, `semana_fin` (DATE), `cadena_key`, `cadena`, `giro` (VARCHAR),
+`es_cadena_referencia BOOLEAN`, `geografia_id`, `estado`, `municipio` (VARCHAR), `n_observaciones`,
+`n_registros_origen`, `n_establecimientos`, `n_productos`, `n_dias_con_observacion`, `n_atipicas`, `n_no_comparables`
+(BIGINT), `pct_atipicas`, `pct_no_comparables` (DOUBLE), `articulos_canasta_disponibles`,
+`articulos_canasta_totales` (BIGINT), `es_canasta_completa BOOLEAN`.

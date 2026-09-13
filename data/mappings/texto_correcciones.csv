@@ -1,9 +1,11 @@
 columna,valor_original,valor_corregido,candidatos,metodo,requiere_revision
+cadena_comercial,Central de Abastos,Central de Abasto,,manual,False
 direccion,13 de Enero. N?m. 217. Entre Niños Heroes y Av. Monterrey. Col. Primera de Mayo. Cp. 89400,13 de Enero. Núm. 217. Entre Niños Heroes y Av. Monterrey. Col. Primera de Mayo. Cp. 89400,1,auto_candidato_unico,False
 direccion,Benito Juárez 122. Entre Altamira y Álvaro Oreg?n. Col. Centro. Cp. 89000,,0,sin_candidato_unico,True
 direccion,Ciricote. Mz.32. Lt.01 Local 17 y 18. Jab?n 9 y Chaca. Col. Sm.- 23. Cp. 77500,Ciricote. Mz.32. Lt.01 Local 17 y 18. Jabín 9 y Chaca. Col. Sm.- 23. Cp. 77500,1,auto_candidato_unico,False
 giro,Jugueter?as,Jugueterías,1,auto_candidato_unico,False
 giro,Papeler?as,Papelerías,1,auto_candidato_unico,False
+giro,Tienda Departamentales,Tiendas Departamentales,,manual,False
 marca,Azor. Aquarelo D?o,Azor. Aquarelo Dúo,1,auto_candidato_unico,False
 marca,Bic. Evolution ? Kids,Bic. Evolution Ó Kids,1,auto_candidato_unico,False
 marca,D?héctor,D´héctor,1,auto_candidato_unico,False

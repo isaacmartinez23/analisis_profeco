@@ -18,8 +18,8 @@ Documento vivo: cada limitación indica su efecto en los resultados y, si aplica
 |---|---|---|---|
 | L-06 | 2.5% de las observaciones de catálogos de canasta tienen presentación no comparable (ambigua o sin cantidad). | Quedan fuera de precios unitarios y medianas. | Cola `reports/revision_manual_productos.csv`; decisiones en `data/mappings/manual/`. |
 | L-07 | Un establecimiento se identifica por nombre + dirección normalizados. | Si PROFECO reescribe una dirección, la tienda aparece como nueva. | Consolidación por coordenadas en una fase posterior. |
-| L-08 | Atípicos por producto sobre todo el periodo (2.5 años), con mediana y MAD exactas. | La inflación no se descuenta; umbrales de 3× y 10× son holgados a propósito. Ofertas muy agresivas pueden quedar marcadas. | Validación manual en Fase 2 (D-018). |
-| L-09 | Las decisiones sobre `Bolsa 3.564 Gr.` de detergente son propuestas del asistente. | Afectan precio unitario de ese artículo. | Validar en Fase 2 (D-020). |
+| L-08 | Atípicos por producto sobre todo el periodo (2.5 años), con mediana y MAD exactas. | La inflación no se descuenta; umbrales de 3× y 10× son holgados a propósito. | Validado en Fase 2: 119 observaciones de artículos de canasta marcadas, 4 en cadenas de referencia, sin sesgo de día (D-025). |
+| L-09 | Las decisiones manuales (detergente `3.564 Gr.`, variantes de cadena y giro) son propuestas del asistente con evidencia de datos. | El detergente ya no está en la canasta v1; las variantes no afectan a cadenas de referencia. | Validación humana pendiente (D-025, D-028). |
 
 ## Canasta
 
@@ -27,8 +27,11 @@ Documento vivo: cada limitación indica su efecto en los resultados y, si aplica
 |---|---|---|---|
 | L-10 | La canasta v0 es genérica: cada artículo es la mediana de precio unitario de cualquier marca comparable. | Diferencias entre cadenas combinan precio y mezcla de marcas (p. ej. marcas propias). | Documentado en D-009; explicar en dashboard y memo. |
 | L-11 | `cantidad_referencia` = presentación modal observada, no consumo de un hogar. | El costo es un índice comparable entre cadenas y semanas, no el gasto real de una familia. | Sustituir por cantidades de una fuente oficial en una versión posterior de la canasta. |
-| L-12 | Ventana móvil: semanas consecutivas comparten la mitad de sus observaciones. | Cambios semanales suavizados y no independientes. | Mostrar la ventana (`ventana_desde`) y evitar pruebas estadísticas semana contra semana. |
-| L-13 | En datos completos solo 50.7% de celdas cadena de referencia × municipio × semana tienen la canasta completa. | Comparaciones posibles en la mitad de las celdas; las incompletas no publican costo. | Revisión de la selección de artículos en Fase 2 (carne molida especial, pierna de pollo, harina de maíz, limpieza). |
+| L-12 | Ventana móvil: semanas consecutivas comparten la mitad de sus observaciones. | Cambios semanales suavizados y no independientes. | Mostrar la ventana (`ventana_desde`); evolución con índice directo de panel fijo (D-026). |
+| L-13 | Con la canasta v1, 81% de celdas de referencia tienen canasta completa y 85% de municipio-semanas permiten comparar al menos dos cadenas; Bodega Aurrera es la más baja (~68%). 24 de 75 municipios nunca tienen dos cadenas de referencia completas en la misma semana (p. ej. Toluca: 1 tienda de referencia). | El ahorro se estima en 51 municipios; los demás solo aportan cobertura. | Documentado en `reports/resultados_canasta.md` (sección 5). |
+| L-17 | En la mediana de las celdas, cada cadena de referencia está representada por 1 tienda y 1 día de levantamiento por semana. | El costo de una celda puede reflejar una sola sucursal; hay ruido semana a semana. | Ventana de 14 días, medianas, publicación de `n_observaciones` y análisis sobre muchas celdas. |
+| L-18 | La canasta genérica mezcla marcas: el sobreprecio mediano de pasta para sopa frente a la cadena más barata es ~109% (marca propia frente a marca comercial). | Parte del ahorro refleja la oferta de marcas de cada cadena, no solo su precio. | Mostrar diferencias por artículo (`mart_precio_producto`) y advertirlo en el dashboard y el memo. |
+| L-19 | La canasta v1 es alimentaria: no incluye limpieza ni higiene (D-022). | El costo subestima el gasto básico total del hogar. | Posible canasta complementaria en una versión posterior. |
 | L-14 | Wal-mart y Bodega Aurrera pertenecen al mismo grupo empresarial. | Su diferencia es de formato de tienda, no de competencia. | Columna `grupo_empresarial` en `seeds.cadenas_referencia` (D-011). |
 
 ## Operación

@@ -55,6 +55,10 @@ en cada posición de `?`:
 Exigir un carácter no ASCII evita corregir `Pe?a` hacia `Pera`. Algunas presentaciones tienen `?` legítimos
 (`néctar de Miel?`); al no tener candidato, se conservan.
 
+Las variantes que no son de acentos ni de `?` (por ejemplo `Central de Abastos` / `Central de Abasto`) se corrigen
+con filas en `data/mappings/manual/texto_correcciones_manual.csv`; esas filas se agregan aunque el valor no tenga `?`
+(D-028).
+
 ## 3. Interpretación de presentaciones
 
 `src/normalize/units.py::interpretar` devuelve unidad base (`kg`, `l`, `pieza`), contenido en esa unidad, regla
