@@ -65,6 +65,7 @@ Cifras reproducibles en `reports/perfil_datos.md`.
 | A-13 | Pocas zonas urbanas: la mayoría de los estados tiene 1 municipio (la capital); CDMX 13 alcaldías y Estado de México 17 municipios | Geografía | Interpretar como “ciudades muestreadas”, no representatividad estatal. |
 | A-14 | Tres columnas no documentadas al final del encabezado (`folio`, `cv_producto`, `cv_marca`) | Solo 2026-06 (2 archivos) | Se aceptan por nombre y se conservan en `raw`; no se modelan (D-037). |
 | A-15 | Caracteres perdidos también en `municipio` (32% de las filas de junio), además de producto, presentación y dirección | 2026-06 | Corrección por candidato único extendida a `estado` y `municipio` (D-038). |
+| A-16 | Catálogos con nueva grafía: `Básicos`, `PACIC`, `Útiles Escolares`, `Electrodomésticos` | 2026-07, 971,622 filas | Relación con el seed por llave canónica (D-039). |
 
 ## 4. Contraste con el diccionario oficial (Fase 3)
 
@@ -117,6 +118,7 @@ La primera ejecución completa en GitHub Actions descargó una versión nueva de
 | Codificación | UTF-8 con BOM (vuelve al formato de 2024–2026-04) | UTF-8 con BOM |
 | Formato `fecha_registro` | `yyyy/mm/dd` | `yyyy/mm/dd` |
 | Encabezado | **18 columnas**: las 15 documentadas en el mismo orden + `folio`, `cv_producto`, `cv_marca` | 15 columnas |
+| Catálogos | Grafía anterior (`Basicos`, `Pacic`) | **`Básicos`, `PACIC`, `Útiles Escolares`, `Electrodomésticos`** (A-16) |
 | Filas cargadas = líneas − 1 | Verificado | Verificado |
 | Fechas, precios inválidos | 0 | 0 |
 

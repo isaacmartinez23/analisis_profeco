@@ -161,7 +161,7 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
 - **Decisión:** Seed `catalogos` asigna un bit por catálogo; la observación guarda `catalogos_mask = bit_or(...)`.
   `dim_producto.catalogos` lo traduce a texto.
 - **Consecuencias:** Un catálogo nuevo en los datos hace fallar la prueba de relación en la fuente, en lugar de
-  perderse silenciosamente.
+  perderse silenciosamente. Desde D-039 la relación se hace por llave canónica en `int_catalogos`.
 
 ## D-018 · Atípicos con magnitud mínima
 
@@ -379,6 +379,23 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
 - **Consecuencias:** Los 21 valores de junio se corrigen automáticamente. Si aparece un municipio con `?` sin
   candidato único, `dbt test` detiene el pipeline en lugar de publicar una geografía partida; se resuelve con una
   fila en `texto_correcciones_manual.csv`.
+
+## D-039 · Catálogos relacionados por llave canónica
+
+- **Fecha:** 2026-09-13 · **Fase:** 3 (operación)
+- **Contexto:** Con D-037 y D-038, la ejecución completa en CI (run 34772772277) llegó a `dbt test` y falló en dos
+  pruebas: 971,622 filas con catálogo fuera del seed y 439 combinaciones sin `catalogos_mask`. En 2026-07 PROFECO
+  escribe `Básicos`, `PACIC`, `Útiles Escolares` y `Electrodomésticos` en lugar de `Basicos`, `Pacic`,
+  `Utiles Escolares` y `Electrodomesticos`: mismos productos en Básicos (203), PACIC (25) y Electrodomésticos (33), y
+  Útiles Escolares crece de 35 a 46 por la temporada escolar. Sin la prueba,
+  `Básicos` y `PACIC` habrían quedado fuera de la canasta en julio.
+- **Decisión:** Nuevo modelo `int_catalogos` (valor original → catálogo del seed por la macro `llave`), usado por
+  `int_productos_sku` e `int_observaciones`. Pruebas: `catalogo_original` único y `bit` no nulo; sustituyen a la
+  relación exacta en la fuente. El alcance de la cola de revisión (`src/normalize/build.py`) también compara por
+  llave.
+- **Consecuencias:** Un cambio de acentos o mayúsculas en un catálogo ya no detiene el pipeline; un catálogo realmente
+  nuevo sí. Julio se comporta igual que junio: 128 a 139 celdas completas por semana en la prueba local, frente a
+  130 a 137 en junio.
 
 ## D-021 · Medianas exactas para resultados deterministas
 

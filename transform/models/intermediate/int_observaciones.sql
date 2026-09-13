@@ -43,7 +43,7 @@ archivos as (
 ),
 
 catalogos as (
-    select catalogo, 1 << bit as bit_catalogo from {{ ref('catalogos') }}
+    select catalogo_original as catalogo, bit_catalogo from {{ ref('int_catalogos') }}
 ),
 
 agrupado as (

@@ -79,7 +79,8 @@ tabla de hechos para auditoría.
 - **Unicidad**: `dim_producto.producto_id`, `dim_establecimiento.establecimiento_id`, `dim_geografia.geografia_id`,
   `dim_fecha.fecha`, `dim_canasta (versión, artículo)`, grano de `fct_precio_observado` y de `mart_canasta_semanal`.
 - **Integridad referencial**: hechos → cuatro dimensiones; establecimiento → geografía; producto → canasta;
-  `raw.qqp_precios.catalogo` → seed `catalogos` (un catálogo nuevo falla).
+  `raw.qqp_precios.catalogo` → seed `catalogos` por llave canónica en `int_catalogos` (un catálogo nuevo falla;
+  un cambio de acentos o mayúsculas no, D-039).
 - **Validez**: precio > 0, precio unitario > 0, contenido base > 0, unidades permitidas, reglas de atípico permitidas.
 - **Coherencia**: `es_atipico` ⇔ regla y motivo presentes; precio unitario presente ⇔ presentación comparable;
   `costo_canasta` presente ⇔ canasta completa.

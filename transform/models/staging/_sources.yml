@@ -15,9 +15,8 @@ sources:
           - name: marca
             tests: [not_null]
           - name: catalogo
-            tests:
-              - not_null
-              - relationships: {arguments: {to: "ref('catalogos')", field: catalogo}}
+            description: Se relaciona con el seed `catalogos` por llave canónica en `int_catalogos` (D-039).
+            tests: [not_null]
           - name: precio
             tests: [not_null]
           - name: fecha_registro
