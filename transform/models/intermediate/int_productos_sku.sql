@@ -16,10 +16,6 @@ with combinaciones as (
     group by all
 ),
 
-catalogos as (
-    select catalogo, 1 << bit as bit_catalogo from {{ ref('catalogos') }}
-),
-
 por_combinacion as (
     select
         c.producto_original,
@@ -28,12 +24,12 @@ por_combinacion as (
         bit_or(cat.bit_catalogo) as catalogos_mask,
         -- Pacic reutiliza productos de otros catálogos con categorías propias: se prefiere la categoría original.
         coalesce(
-            arg_max(c.categoria, c.filas) filter (where c.catalogo <> 'Pacic'),
+            arg_max(c.categoria, c.filas) filter (where cat.catalogo is distinct from 'Pacic'),
             arg_max(c.categoria, c.filas)
         ) as categoria,
         cast(sum(c.filas) as bigint) as filas
     from combinaciones as c
-    left join catalogos as cat on cat.catalogo = c.catalogo
+    left join {{ ref('int_catalogos') }} as cat on cat.catalogo_original = c.catalogo
     group by c.producto_original, c.presentacion_original, c.marca_original
 ),
 

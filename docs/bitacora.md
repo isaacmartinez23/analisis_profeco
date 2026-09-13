@@ -303,3 +303,64 @@ Ninguno de los incidentes dañó datos: la ingesta es transaccional y los modelo
 - El dashboard de Looker Studio está especificado, no construido.
 
 **Fase 3 lista para aprobación.**
+
+## 2026-09-13 · Fase 3 — Primeras ejecuciones en GitHub Actions
+
+### Ejecuciones
+
+| Ejecución | Modo | Resultado | Causa |
+|---|---|---|---|
+| 34769006755 | muestra | Falla en publicación | `SUPABASE_DB_HOST` no resolvía en DNS. Se agregó validación previa de la conexión con mensajes que no muestran secretos (PR #2). |
+| 34769025081 | completo | Falla en `inspect` | Descarga y extracción correctas; `06-2026_Q1/Q2` con 18 columnas (D-037). |
+| 34769738774 | muestra | Falla en publicación | Mismo host inválido, antes de corregir los secretos. |
+| 34771164262 | muestra (rama del PR #2) | **Éxito** | Publicación `exitosa` en Supabase en 3 s: 13 tablas en `qqp`. `looker_lector` lee `qqp`; `anon` y `authenticated` sin acceso a `qqp` ni `qqp_meta`. Sin alertas del asesor de seguridad. |
+| 34772772277 | completo (rama del PR #3, D-037 y D-038) | Falla en `dbt test` | Inspección, ingesta (160 s), calidad, normalización y `dbt run` (192 s) correctos. 2 de 151 pruebas fallan: catálogos de julio con otra grafía (D-039). No se publicó nada. |
+| 34773616518 | completo (rama del PR #3, con D-039) | **Éxito** | Ver "Primera publicación completa". |
+
+### Primera publicación completa
+
+| Paso | Resultado |
+|---|---|
+| Descarga | 3 archivos oficiales (376.8 MB) en 12 s |
+| Inspección | 62 archivos válidos; aviso de columnas adicionales en `06-2026_Q1/Q2` (80 s con extracción) |
+| Ingesta | 62 archivos en 125 s |
+| Normalización | 898 productos, 6,588 presentaciones, 1,717 correcciones de texto, 97.7% de filas en alcance comparables (11 s) |
+| dbt | 23 modelos en 163 s; 153 pruebas pasan en 10 s |
+| Calidad y validación | Solo M-08 en alerta (44 días desde el último dato, 2026-07-31); validación independiente 24/24 |
+| Publicación | `exitosa` en 12 s: 12 tablas, 317,745 filas; `metadatos` con 62 archivos, modo `completo`, última semana 2026-07-27 |
+| Supabase | Base de 96 MB (esquema `qqp` 91 MB) de 500 MB del plan gratuito; sin esquemas residuales; `dim_geografia` con 75 municipios, los mismos que antes de junio; `looker_lector` lee las 13 tablas; `anon` y `authenticated` sin acceso; asesor de seguridad sin alertas |
+| Continuidad | Ahorro máximo mediano semanal de 30.78 a 45.34 MXN entre 2026-05-11 y 2026-07-27, sin saltos en el cambio de formato de junio ni en el de julio |
+
+La corrida fallida anterior abrió el issue #1 de alerta, que ya puede cerrarse.
+
+### Cambio de esquema de PROFECO (junio 2026)
+
+Con autorización del responsable se descargó la versión vigente de `QQP_2026.zip` a `data/interim/descargas/`
+(`data/raw/` intacto) y se revisó antes de cambiar código (diccionario validado §6):
+
+- Enero a mayo idénticos; nuevos 2026-06 y 2026-07 (2.66 M filas, hasta el 2026-07-31).
+- Junio: 3 columnas no documentadas al final (D-037) y caracteres perdidos en un tercio de las filas, incluido el
+  municipio (D-038). Julio: formato de 2024, sin anomalías.
+- Hallazgo que habría pasado inadvertido: sin D-038, 21 municipios se habrían duplicado en junio y la serie semanal
+  se habría partido sin que fallara ninguna prueba.
+- Julio renombró 4 catálogos con acentos o mayúsculas (D-039); la prueba de relación con el seed lo detectó en CI.
+  Se revisaron las demás columnas llave de junio y julio contra la historia: fuera del catálogo y los `?`, solo hay
+  valores realmente nuevos (3 tiendas de uniformes y zapatos, 1 producto escolar; 175 filas).
+
+### Evidencia
+
+| Prueba | Resultado |
+|---|---|
+| Carga real de `05-2026_Q2`, `06-2026_Q1`, `06-2026_Q2`, `07-2026_Q2` en una base temporal | Filas = líneas − 1 en los 4; 0 fechas y 0 precios inválidos; columnas adicionales pobladas solo en junio |
+| Corrección por candidato único sobre valores reales | 21 de 21 municipios y 75 de 75 productos de junio corregidos; quedan 6 valores menores (1,733 filas) para revisión |
+| `pytest -q` | 83 pruebas pasan (nuevas: encabezados aceptados y rechazados, migración de una base existente, aviso de `inspect`, corrección de geografía, alcance de catálogos por llave, filtro de la validación) |
+| Pipeline de la muestra en local (sin publicar) | 22 modelos, 151 pruebas dbt, validación independiente 8/8; M-08 en alerta como se esperaba (antes de D-039) |
+| Normalización, dbt y validación con datos reales `05-2026_Q2` a `07-2026_Q2` (3.19 M filas, base temporal) | 23 modelos, 153 pruebas dbt, 24/24 validaciones en 6 municipio-semanas de junio y julio (incluida Coyoacán, que llegó como `Coyoac?n`); 72 municipios, ninguno con `?`; 128–139 celdas completas por semana |
+| `ruff check .` / `ruff format --check .` | Sin errores |
+
+### Pendientes
+
+- `data/mappings/` y `reports/` versionados siguen generados con los datos hasta 2026-05: en CI se regeneran en cada
+  ejecución pero no se versionan. Actualizarlos en local requiere sustituir `data/raw/QQP_2026.zip` por la versión
+  nueva (hoy en `data/interim/descargas/`), decisión del responsable por la regla de inmutabilidad.
+- Revisar los 6 valores con `?` sin candidato único (1,733 filas, fuera de la geografía) en la cola de revisión.

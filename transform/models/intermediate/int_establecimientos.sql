@@ -37,19 +37,23 @@ corregidas as (
         coalesce(cn.valor_corregido, c.nombre_comercial) as nombre_comercial_corregido,
         coalesce(cd.valor_corregido, c.direccion) as direccion_corregida,
         coalesce(cc.valor_corregido, c.cadena_comercial) as cadena_corregida,
-        coalesce(cg.valor_corregido, c.giro) as giro_corregido
+        coalesce(cg.valor_corregido, c.giro) as giro_corregido,
+        coalesce(ce.valor_corregido, c.estado) as estado_corregido,
+        coalesce(cm.valor_corregido, c.municipio) as municipio_corregido
     from combinaciones as c
     left join correcciones as cn on cn.columna = 'nombre_comercial' and cn.valor_original = c.nombre_comercial
     left join correcciones as cd on cd.columna = 'direccion' and cd.valor_original = c.direccion
     left join correcciones as cc on cc.columna = 'cadena_comercial' and cc.valor_original = c.cadena_comercial
     left join correcciones as cg on cg.columna = 'giro' and cg.valor_original = c.giro
+    left join correcciones as ce on ce.columna = 'estado' and ce.valor_original = c.estado
+    left join correcciones as cm on cm.columna = 'municipio' and cm.valor_original = c.municipio
 ),
 
 llaves as (
     select
         *,
-        coalesce({{ llave('estado') }}, '') as estado_key,
-        coalesce({{ llave('municipio') }}, '') as municipio_key,
+        coalesce({{ llave('estado_corregido') }}, '') as estado_key,
+        coalesce({{ llave('municipio_corregido') }}, '') as municipio_key,
         coalesce({{ llave('cadena_corregida') }}, '') as cadena_key,
         coalesce({{ llave('nombre_comercial_corregido') }}, '') || '|' || coalesce({{ llave('direccion_corregida') }}, '')
             as establecimiento_key

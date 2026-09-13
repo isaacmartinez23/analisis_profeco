@@ -4,8 +4,8 @@ seeds:
   - name: catalogos
     description: >
       Catálogos de levantamiento de PROFECO y su bit en `catalogos_mask`. Una observación publicada en
-      varios catálogos se registra una sola vez con la unión de bits (D-006). Un catálogo nuevo en los
-      datos hace fallar la prueba de relación en staging.
+      varios catálogos se registra una sola vez con la unión de bits (D-006). Los datos se relacionan por
+      llave canónica en `int_catalogos` (D-039); un catálogo nuevo hace fallar su prueba.
     config:
       column_types: {catalogo: varchar, bit: integer, en_alcance_canasta: boolean}
     columns:

@@ -1,3 +1,4 @@
+import duckdb
 import pandas as pd
 
 from src import config
@@ -27,3 +28,29 @@ def test_correccion_manual_sin_interrogacion_se_agrega(tmp_path, monkeypatch):
     assert correcciones.loc[("cadena_comercial", "Central de Abastos"), "metodo"] == "manual"
     assert correcciones.loc[("giro", "Papeler?as"), "metodo"] == "manual"
     assert len(correcciones) == 2
+
+
+def test_alcance_de_catalogos_no_depende_de_la_grafia():
+    con = duckdb.connect()
+    con.execute(
+        """CREATE TABLE raw_qqp AS SELECT * FROM (VALUES
+            ('Arroz', 'Básicos'), ('Frijol', 'PACIC'), ('Tenis Running', 'Tenis'), ('Leche', 'Basicos')
+        ) t(producto, catalogo)"""
+    )
+    con.execute("CREATE SCHEMA raw; CREATE VIEW raw.qqp_precios AS SELECT * FROM raw_qqp")
+
+    distintos = build._distintos(con, "producto").set_index("valor")["en_alcance"].to_dict()
+
+    assert distintos == {"Arroz": True, "Frijol": True, "Tenis Running": False, "Leche": True}
+
+
+def test_corrige_caracteres_perdidos_en_la_geografia(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "MANUAL_MAPPINGS_DIR", tmp_path)
+    assert {"estado", "municipio"} <= set(build.COLUMNAS_CORRECCION)
+    distintos = {"municipio": pd.DataFrame({"valor": ["Coyoac?n", "Coyoacán", "COYOACAN", "Juárez"]})}
+
+    correcciones = build.construir_correcciones(distintos)
+
+    assert correcciones[["valor_original", "valor_corregido", "metodo"]].to_dict("records") == [
+        {"valor_original": "Coyoac?n", "valor_corregido": "Coyoacán", "metodo": "auto_candidato_unico"}
+    ]
