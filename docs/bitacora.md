@@ -303,3 +303,39 @@ Ninguno de los incidentes dañó datos: la ingesta es transaccional y los modelo
 - El dashboard de Looker Studio está especificado, no construido.
 
 **Fase 3 lista para aprobación.**
+
+## 2026-09-13 · Fase 3 — Primeras ejecuciones en GitHub Actions
+
+### Ejecuciones
+
+| Ejecución | Modo | Resultado | Causa |
+|---|---|---|---|
+| 34769006755 | muestra | Falla en publicación | `SUPABASE_DB_HOST` no resolvía en DNS. Se agregó validación previa de la conexión con mensajes que no muestran secretos (PR #2). |
+| 34769025081 | completo | Falla en `inspect` | Descarga y extracción correctas; `06-2026_Q1/Q2` con 18 columnas (D-037). |
+| 34769738774 | muestra | Falla en publicación | Mismo host inválido, antes de corregir los secretos. |
+| 34771164262 | muestra (rama del PR #2) | **Éxito** | Publicación `exitosa` en Supabase en 3 s: 13 tablas en `qqp`. `looker_lector` lee `qqp`; `anon` y `authenticated` sin acceso a `qqp` ni `qqp_meta`. Sin alertas del asesor de seguridad. |
+
+### Cambio de esquema de PROFECO (junio 2026)
+
+Con autorización del responsable se descargó la versión vigente de `QQP_2026.zip` a `data/interim/descargas/`
+(`data/raw/` intacto) y se revisó antes de cambiar código (diccionario validado §6):
+
+- Enero a mayo idénticos; nuevos 2026-06 y 2026-07 (2.66 M filas, hasta el 2026-07-31).
+- Junio: 3 columnas no documentadas al final (D-037) y caracteres perdidos en un tercio de las filas, incluido el
+  municipio (D-038). Julio: formato de 2024, sin anomalías.
+- Hallazgo que habría pasado inadvertido: sin D-038, 21 municipios se habrían duplicado en junio y la serie semanal
+  se habría partido sin que fallara ninguna prueba.
+
+### Evidencia
+
+| Prueba | Resultado |
+|---|---|
+| Carga real de `05-2026_Q2`, `06-2026_Q1`, `06-2026_Q2`, `07-2026_Q2` en una base temporal | Filas = líneas − 1 en los 4; 0 fechas y 0 precios inválidos; columnas adicionales pobladas solo en junio |
+| Corrección por candidato único sobre valores reales | 21 de 21 municipios y 75 de 75 productos de junio corregidos; quedan 6 valores menores (1,733 filas) para revisión |
+| `pytest -q` | 82 pruebas pasan (nuevas: encabezados aceptados y rechazados, migración de una base existente, aviso de `inspect`, corrección de geografía, filtro de la validación) |
+| Pipeline de la muestra en local (sin publicar) | 22 modelos, 151 pruebas dbt, validación independiente 8/8; M-08 en alerta como se esperaba |
+| `ruff check .` / `ruff format --check .` | Sin errores |
+
+### No verificado todavía
+
+- Pipeline completo con junio y julio (en CI; en local se evita por el límite térmico del equipo).

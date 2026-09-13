@@ -44,6 +44,9 @@ COLUMNAS_CORRECCION = [
     "cadena_comercial",
     "nombre_comercial",
     "direccion",
+    # 2026-06 perdió acentos también en la geografía (D-038): sin corregir, "Coyoac?n" sería otro municipio.
+    "estado",
+    "municipio",
 ]
 SIN_MARCA = {"S/M", "S/MARCA", "SIN MARCA", "SM"}
 DECISIONES_VALIDAS = {"confirmar", "corregir", "excluir"}

@@ -23,6 +23,9 @@ models:
         tests: [not_null]
       - name: geografia_id
         tests: [not_null]
+      - name: municipio_key
+        tests:
+          - expression_is_true: {arguments: {expression: "municipio_key not like '%?%'"}}
       - name: cadena_key
         tests:
           - expression_is_true: {arguments: {expression: "cadena_key <> ''"}}

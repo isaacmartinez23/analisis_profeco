@@ -27,3 +27,15 @@ def test_correccion_manual_sin_interrogacion_se_agrega(tmp_path, monkeypatch):
     assert correcciones.loc[("cadena_comercial", "Central de Abastos"), "metodo"] == "manual"
     assert correcciones.loc[("giro", "Papeler?as"), "metodo"] == "manual"
     assert len(correcciones) == 2
+
+
+def test_corrige_caracteres_perdidos_en_la_geografia(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "MANUAL_MAPPINGS_DIR", tmp_path)
+    assert {"estado", "municipio"} <= set(build.COLUMNAS_CORRECCION)
+    distintos = {"municipio": pd.DataFrame({"valor": ["Coyoac?n", "Coyoacán", "COYOACAN", "Juárez"]})}
+
+    correcciones = build.construir_correcciones(distintos)
+
+    assert correcciones[["valor_original", "valor_corregido", "metodo"]].to_dict("records") == [
+        {"valor_original": "Coyoac?n", "valor_corregido": "Coyoacán", "metodo": "auto_candidato_unico"}
+    ]

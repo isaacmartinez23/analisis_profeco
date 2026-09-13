@@ -1,7 +1,8 @@
 # Diccionario de datos validado — QQP PROFECO
 
 **Fuente:** 58 CSV quincenales extraídos de `QQP_2024.rar`, `QQP_2025.rar` y `QQP_2026.zip`
-(2024-01-02 a 2026-05-29).
+(2024-01-02 a 2026-05-29). Sección 6: la versión de `QQP_2026.zip` descargada el 2026-09-13 agrega 4 archivos
+(2026-06 y 2026-07) con cambios de formato.
 **Método:** PROFECO no entregó diccionario ni metadatos. Cada definición se dedujo de los datos y se marca con su
 nivel de certeza: **Verificado** (comprobado en las 33.5 M filas) o **Inferido** (interpretación razonable, a
 confirmar con la documentación oficial).
@@ -62,6 +63,8 @@ Cifras reproducibles en `reports/perfil_datos.md`.
 | A-11 | Coordenadas vacías o fuera de México | 791 vacías; 46 latitudes y 16 longitudes fuera de rango | Bandera de calidad en la dimensión establecimiento. |
 | A-12 | Sin cobertura en Colima ni Nayarit; Hidalgo con 70 de 126 semanas | Geografía | Documentar como limitación; no imputar. |
 | A-13 | Pocas zonas urbanas: la mayoría de los estados tiene 1 municipio (la capital); CDMX 13 alcaldías y Estado de México 17 municipios | Geografía | Interpretar como “ciudades muestreadas”, no representatividad estatal. |
+| A-14 | Tres columnas no documentadas al final del encabezado (`folio`, `cv_producto`, `cv_marca`) | Solo 2026-06 (2 archivos) | Se aceptan por nombre y se conservan en `raw`; no se modelan (D-037). |
+| A-15 | Caracteres perdidos también en `municipio` (32% de las filas de junio), además de producto, presentación y dirección | 2026-06 | Corrección por candidato único extendida a `estado` y `municipio` (D-038). |
 
 ## 4. Contraste con el diccionario oficial (Fase 3)
 
@@ -86,7 +89,8 @@ El portal de datos abiertos de PROFECO publica un diccionario en https://datos.p
 | LATITUD | Número (18,6) | `latitud` | Confirma grados decimales. |
 | LONGITUD | Número (18,6) | `longitud` | Confirma grados decimales. |
 
-El portal ofrece además un archivo de metadatos que no se descargó en esta fase.
+El portal ofrece además un archivo de metadatos que no se descargó en esta fase. En una nueva consulta del
+2026-09-13 el diccionario sigue documentando solo estas 15 columnas.
 
 ## 5. Interpretaciones pendientes de confirmar
 
@@ -95,3 +99,48 @@ El portal ofrece además un archivo de metadatos que no se descargó en esta fas
 - **Unidad del precio**: se asume precio por presentación completa en MXN con IVA incluido (precio de anaquel).
 - **Grano de levantamiento**: una tienda se visita típicamente 2 días por quincena; no se sabe si todos los
   productos se levantan en cada visita.
+- **`folio`, `cv_producto`, `cv_marca`** (sección 6): no documentadas; no se usan en el modelo.
+
+## 6. Archivos 2026-06 y 2026-07 (descarga del 2026-09-13)
+
+La primera ejecución completa en GitHub Actions descargó una versión nueva de `QQP_2026.zip` (195.6 MB, SHA-256
+`172bd1a4…`) y se detuvo en `inspect` por cambio de esquema. Revisión hecha sobre una copia en
+`data/interim/descargas/` (el original de `data/raw/` no se modificó):
+
+- Los 10 CSV de enero a mayo son idénticos a los ya cargados (mismo tamaño y CRC32). Dentro del zip ahora están en
+  una carpeta `QQP_2026/`; la extracción ya usaba solo el nombre del archivo.
+- Se agregan `06-2026_Q1` (622,490 filas), `06-2026_Q2` (632,548), `07-2026_Q1` (665,909) y `07-2026_Q2` (744,623),
+  con fechas del 2026-06-01 al 2026-07-31.
+
+| Propiedad | 2026-06 Q1 y Q2 | 2026-07 Q1 y Q2 |
+|---|---|---|
+| Codificación | UTF-8 con BOM (vuelve al formato de 2024–2026-04) | UTF-8 con BOM |
+| Formato `fecha_registro` | `yyyy/mm/dd` | `yyyy/mm/dd` |
+| Encabezado | **18 columnas**: las 15 documentadas en el mismo orden + `folio`, `cv_producto`, `cv_marca` | 15 columnas |
+| Filas cargadas = líneas − 1 | Verificado | Verificado |
+| Fechas, precios inválidos | 0 | 0 |
+
+Columnas adicionales de 2026-06 (sin documentación oficial; todo como texto):
+
+| Columna | Observado en los 2 archivos | Interpretación | Certeza |
+|---|---|---|---|
+| `folio` | Numérico, sin vacíos. 1,640 y 1,753 valores; relación 1 a 1 con nombre comercial + dirección. | Identificador del establecimiento. | Inferido |
+| `cv_producto` | Numérico, sin vacíos. Cada código corresponde a un solo `producto` (797 códigos para 739 productos). | Clave de producto de PROFECO, más fina que el nombre. | Inferido |
+| `cv_marca` | Numérico, sin vacíos. 313 códigos aparecen con más de una `marca`. | No es una llave de marca por sí sola; significado desconocido. | Inferido |
+
+Anomalía de 2026-06: **caracteres perdidos masivos** (A-15). En julio no hay ninguno.
+
+| Columna | Filas con `?` en 2026-06 | Valores distintos | Sin corrección automática |
+|---|---|---|---|
+| `municipio` | 401,781 (32%) | 21 (`Coyoac?n`, `Le?n`, `Ju?rez`…) | 0 |
+| `presentacion` | 230,839 | 619 | 3 valores, 294 filas |
+| `producto` | 163,819 | 75 (`Az?car`, `Caf?`…) | 0 |
+| `direccion` | 147,248 | 287 | 0 |
+| `marca` | 64,968 | 99 | 2 valores, 1,435 filas |
+| `nombre_comercial` | 60,862 | 608 | 1 valor, 4 filas |
+| `giro` | 34,953 | 5 | 0 |
+| `categoria` | 496 | 1 (`Art?culos Deportivos`) | no se corrige (no es llave ni se usa en la canasta) |
+| `estado`, `cadena_comercial`, `catalogo` | 0 | — | — |
+
+"Sin corrección automática" se midió con el método de candidato único (`docs/normalizacion.md` §2) sobre los valores
+de los 58 archivos cargados, los de 2026-06 y los de `07-2026_Q2`.

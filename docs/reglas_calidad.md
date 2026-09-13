@@ -4,7 +4,7 @@ Tres niveles complementarios:
 
 | Nivel | Dónde | Qué valida | Si falla |
 |---|---|---|---|
-| Ingesta | `src/ingest/load.py`, `src.cli inspect` | Archivo legible, encabezado exacto de 15 columnas, formato de fecha reconocido, filas cargadas = líneas físicas − 1 | Se revierte la carga del archivo y el pipeline se detiene |
+| Ingesta | `src/ingest/load.py`, `src.cli inspect` | Archivo legible, 15 columnas esenciales en su orden y solo columnas adicionales revisadas, formato de fecha reconocido, filas cargadas = líneas físicas − 1 | Se revierte la carga del archivo y el pipeline se detiene |
 | Reglas con umbral | `src/quality/checks.py` | Métricas de completitud, validez, cobertura y atípicos | `error` detiene el pipeline; `advertencia` se reporta |
 | Pruebas dbt | `transform/models/**/_*.yml`, `transform/tests/` | Llaves únicas, integridad referencial, valores permitidos, conservación de registros | `dbt test` falla y el pipeline se detiene |
 
@@ -25,8 +25,10 @@ El reporte generado está en `reports/calidad_datos.md`. La publicación (Fase 3
 | R-09 | Filas idénticas dentro de un archivo | advertencia | ≤ 0.1% | En el perfil 0.001%; se consolidan en la tabla de hechos. |
 | R-10 | Filas del archivo más pequeño / mediana | advertencia | ≥ 0.5 | Detecta archivos truncados; el mínimo observado es ~0.75. |
 
-Además, `src.cli inspect` detiene el pipeline ante un **cambio de esquema** (encabezado distinto o filas con
-número incorrecto de columnas) y la ingesta rechaza formatos de fecha no reconocidos o mezclados.
+Además, `src.cli inspect` detiene el pipeline ante un **cambio de esquema** (columna esencial faltante o
+reordenada, columna adicional no revisada, o filas con número incorrecto de columnas) y la ingesta rechaza formatos
+de fecha no reconocidos o mezclados. Las columnas adicionales ya revisadas (`folio`, `cv_producto`, `cv_marca`,
+D-037) solo generan un aviso.
 
 ## Reglas sobre el modelo transformado (`marts`)
 

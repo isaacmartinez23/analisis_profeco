@@ -81,22 +81,30 @@ def paso_setup() -> None:
 
 
 def paso_inspect() -> None:
-    """Extrae los comprimidos (modo completo) y valida formato y esquema de cada CSV."""
+    """Extrae los comprimidos (modo completo) y valida formato y esquema de cada CSV.
+
+    Las columnas adicionales ya revisadas (D-037) se reportan como aviso; cualquier otro cambio detiene el pipeline.
+    """
     from src import config
     from src.ingest import extract
-    from src.ingest.csv_source import EXPECTED_COLUMNS
+    from src.ingest.csv_source import columnas_adicionales
     from src.ingest.load import listar_csv
     from src.ingest.sniff import sniff_file
 
     if not config.ES_MUESTRA:
         extract.run()
-    problemas = []
+    problemas, avisos = [], []
     for path in listar_csv(config.CSV_DIR):
         s = sniff_file(path, sample_rows=2000)
-        if s.header != EXPECTED_COLUMNS:
+        try:
+            if extra := columnas_adicionales(s.header, path.name):
+                avisos.append(f"{path.name}: columnas adicionales conocidas {extra}")
+        except ValueError:
             problemas.append(f"{path.name}: encabezado distinto {s.header}")
         if s.sample_bad_width:
             problemas.append(f"{path.name}: {s.sample_bad_width} filas con número de columnas incorrecto")
+    if avisos:
+        print("[inspect] aviso (se conservan en raw, no se modelan):\n  " + "\n  ".join(avisos))
     if problemas:
         raise SystemExit("[inspect] cambios de esquema detectados:\n  " + "\n  ".join(problemas))
     print(f"[inspect] esquema válido en {len(listar_csv(config.CSV_DIR))} archivos de {config.CSV_DIR}")

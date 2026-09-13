@@ -45,8 +45,10 @@ producto (p. ej. el cambio de mayo 2026) quedan en un solo producto.
 
 ## 2. Caracteres perdidos (`?`)
 
-En `05-2026_Q2.csv` PROFECO publicó `?` en lugar de letras acentuadas (`Papeler?as`). Para cada valor con `?` se
-buscan valores intactos de la **misma columna** que coincidan carácter por carácter, con un carácter **no ASCII**
+En `05-2026_Q2.csv` PROFECO publicó `?` en lugar de letras acentuadas (`Papeler?as`); en 2026-06 el problema se
+extendió a un tercio de las filas y al municipio (`Coyoac?n`). Se corrigen `producto`, `presentacion`, `marca`,
+`giro`, `cadena_comercial`, `nombre_comercial`, `direccion`, `estado` y `municipio` (D-038). Para cada valor con `?`
+se buscan valores intactos de la **misma columna** que coincidan carácter por carácter, con un carácter **no ASCII**
 en cada posición de `?`:
 
 - Un único candidato (o variantes que solo difieren en mayúsculas) → corrección automática (`auto_candidato_unico`).

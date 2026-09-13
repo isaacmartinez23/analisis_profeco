@@ -129,28 +129,41 @@ def seleccionar_celdas(con, version: str, n: int) -> pd.DataFrame:
     return candidatas.drop_duplicates("geografia_id").head(n).reset_index(drop=True)
 
 
-def _filas_crudas(con, celda: pd.Series, productos: list[str]) -> pd.DataFrame:
+def _originales_corregidos(correcciones, columna: str, llaves: set[str]) -> list[str]:
+    """Valores con caracteres perdidos cuya corrección tiene alguna de las llaves buscadas."""
+    return sorted(o for o, c in correcciones[columna].items() if llave(c) in llaves)
+
+
+def _filas_crudas(con, celda: pd.Series, productos: list[str], correcciones) -> pd.DataFrame:
     inicio = celda["semana_inicio"] - timedelta(days=7)
     fin = celda["semana_inicio"] + timedelta(days=6)
     meses = sorted({f"{d:%m-%Y}" for d in (inicio, fin, celda["semana_inicio"])})
     patron = "(" + "|".join(meses) + ")"
+    # Filtro previo amplio: incluye las grafías con "?" que se corrigen al municipio o producto buscados.
     return con.execute(
         """
         SELECT p.producto, p.presentacion, p.marca, p.precio, p.fecha_registro, p.cadena_comercial,
                p.nombre_comercial, p.direccion, p.estado, p.municipio, p.archivo_origen, a.formato_fecha
         FROM raw.qqp_precios p JOIN raw.archivos a ON a.archivo = p.archivo_origen
         WHERE regexp_matches(p.archivo_origen, ?)
-          AND upper(strip_accents(p.municipio)) LIKE '%' || ? || '%'
-          AND upper(strip_accents(p.producto)) IN (SELECT unnest(?::VARCHAR[]))
+          AND (upper(strip_accents(p.municipio)) LIKE '%' || ? || '%' OR p.municipio IN (SELECT unnest(?::VARCHAR[])))
+          AND (upper(strip_accents(p.producto)) IN (SELECT unnest(?::VARCHAR[]))
+               OR p.producto IN (SELECT unnest(?::VARCHAR[])))
         """,
-        [patron, celda["municipio_key"], productos],
+        [
+            patron,
+            celda["municipio_key"],
+            _originales_corregidos(correcciones, "municipio", {celda["municipio_key"]}),
+            productos,
+            _originales_corregidos(correcciones, "producto", set(productos)),
+        ],
     ).df()
 
 
 def recalcular_celda(con, celda: pd.Series, canasta: pd.DataFrame, correcciones, manual) -> dict[str, dict]:
     """Devuelve, por cadena de referencia, costos por artículo recalculados en Python."""
     referencia = set(pd.read_csv(config.TRANSFORM_DIR / "seeds" / "cadenas_referencia.csv")["cadena_key"])
-    crudas = _filas_crudas(con, celda, sorted(set(canasta["producto_key"])))
+    crudas = _filas_crudas(con, celda, sorted(set(canasta["producto_key"])), correcciones)
     inicio = celda["semana_inicio"] - timedelta(days=7)
     fin = celda["semana_inicio"] + timedelta(days=6)
     formatos = {"yyyy/mm/dd": "%Y/%m/%d", "dd/mm/yyyy": "%d/%m/%Y"}
@@ -168,7 +181,9 @@ def recalcular_celda(con, celda: pd.Series, canasta: pd.DataFrame, correcciones,
         fecha = datetime.strptime(fila.fecha_registro, formatos[fila.formato_fecha]).date()
         if not (inicio <= fecha <= fin):
             continue
-        if llave(fila.estado) != celda["estado_key"] or llave(fila.municipio) != celda["municipio_key"]:
+        estado = llave(correcciones["estado"].get(fila.estado, fila.estado))
+        municipio = llave(correcciones["municipio"].get(fila.municipio, fila.municipio))
+        if estado != celda["estado_key"] or municipio != celda["municipio_key"]:
             continue
         cadena = llave(correcciones["cadena_comercial"].get(fila.cadena_comercial, fila.cadena_comercial))
         if cadena not in referencia:

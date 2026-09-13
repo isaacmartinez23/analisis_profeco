@@ -349,6 +349,37 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
 - **Consecuencias:** Todas las vistas del dashboard siguen disponibles; el detalle precio-producto-municipio anterior a
   52 semanas solo está en DuckDB. Con un plan de pago basta `QQP_PG_SEMANAS_DETALLE=0`.
 
+## D-037 · Columnas adicionales conocidas en los CSV de PROFECO (aprobada)
+
+- **Fecha:** 2026-09-13 · **Fase:** 3 (operación) · **Aprobó:** responsable del proyecto (autorizó descargar y adaptar)
+- **Contexto:** La primera ejecución completa en GitHub Actions se detuvo en `inspect`: `06-2026_Q1.csv` y
+  `06-2026_Q2.csv` traen 18 columnas, las 15 documentadas en su orden más `folio`, `cv_producto` y `cv_marca`. El
+  diccionario oficial no las menciona y julio vuelve a 15 columnas (diccionario validado §6).
+- **Opciones:** (a) seguir fallando hasta que PROFECO corrija; (b) aceptar cualquier columna extra; (c) aceptar solo
+  las columnas ya revisadas y seguir deteniendo cualquier otro cambio.
+- **Decisión:** (c). `COLUMNAS_ADICIONALES` en `src/ingest/csv_source.py`. Las 15 columnas esenciales deben estar
+  completas y en orden; después solo se admiten columnas de esa lista, sin repetir. La lectura y la inserción se hacen
+  por nombre: las adicionales se guardan en `raw.qqp_precios` (nulas en los demás archivos) y
+  `raw.archivos.columnas_adicionales` registra cuáles trajo cada archivo. `inspect` las reporta como aviso. Staging
+  no las selecciona.
+- **Consecuencias:** El pipeline procesa junio y julio. Una columna nueva distinta, faltante o reordenada sigue
+  deteniendo el pipeline. `folio` podría resolver L-07 (establecimientos por dirección), pero solo existe en dos
+  archivos; se reevaluará si PROFECO lo mantiene.
+
+## D-038 · Corrección de caracteres perdidos en estado y municipio
+
+- **Fecha:** 2026-09-13 · **Fase:** 3 (operación)
+- **Contexto:** En 2026-06 el 32% de las filas trae `?` en `municipio` (`Coyoac?n`, `Le?n`). Las llaves de geografía
+  se calculaban sin corregir: esas filas habrían creado 21 municipios duplicados y partido la serie semanal y las
+  comparaciones de junio y la primera semana de julio. En mayo 2026 la geografía no estaba afectada.
+- **Decisión:** Agregar `estado` y `municipio` a las columnas con corrección por candidato único
+  (`src/normalize/build.py`) y calcular `estado_key`, `municipio_key` y los nombres de `dim_geografia` con el valor
+  corregido. La validación independiente aplica las mismas correcciones. Nueva prueba dbt: ninguna `municipio_key`
+  contiene `?`.
+- **Consecuencias:** Los 21 valores de junio se corrigen automáticamente. Si aparece un municipio con `?` sin
+  candidato único, `dbt test` detiene el pipeline en lugar de publicar una geografía partida; se resuelve con una
+  fila en `texto_correcciones_manual.csv`.
+
 ## D-021 · Medianas exactas para resultados deterministas
 
 - **Contexto:** Con `approx_quantile`, dos ejecuciones idénticas dieron 0.0357% y 0.0356% de atípicos y 50.744% y

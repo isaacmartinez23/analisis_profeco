@@ -40,6 +40,25 @@ def test_error_al_alertar_no_oculta_el_error_original(monkeypatch):
         cli.main(["--muestra", "normalize"])
 
 
+def test_inspect_avisa_columnas_adicionales_y_detiene_cambios_no_revisados(
+    monkeypatch, capsys, tmp_path, csv_utf8_bom, csv_columnas_adicionales
+):
+    from src import config
+
+    monkeypatch.setattr(config, "ES_MUESTRA", True)
+    monkeypatch.setattr(config, "CSV_DIR", tmp_path)
+
+    cli.paso_inspect()
+    salida = capsys.readouterr().out
+    assert "06-2026_Q1.csv: columnas adicionales conocidas ['folio', 'cv_producto', 'cv_marca']" in salida
+    assert "esquema válido en 2 archivos" in salida
+
+    contenido = csv_columnas_adicionales.read_bytes().replace(b"cv_marca", b"cv_tienda")
+    csv_columnas_adicionales.write_bytes(contenido)
+    with pytest.raises(SystemExit, match="06-2026_Q1.csv: encabezado distinto"):
+        cli.paso_inspect()
+
+
 def test_desde_reanuda_en_el_paso_indicado(monkeypatch):
     ejecutados = []
     for nombre in cli.PIPELINE:

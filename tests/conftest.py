@@ -24,6 +24,26 @@ ROWS_DMY = [
 ]
 
 
+HEADER_ADICIONALES = HEADER + ",folio,cv_producto,cv_marca"
+
+ROWS_ADICIONALES = [
+    "Jitomate,1 Kg. Granel. Saladette/huaje o Tomate Saladette/huaje. Primera,S/M,Hortalizas Frescas,"
+    "Frutas y Legumbres,29,2026/06/01,Central de Abasto,Central de Abasto,Central de Abasto,Salida a México,"
+    "Aguascalientes,Aguascalientes,21.832072,-102.292976,20160,869,5",
+]
+
+
+@pytest.fixture
+def csv_columnas_adicionales(tmp_path: Path) -> Path:
+    """Formato de 2026-06: UTF-8 con BOM, CRLF, fechas yyyy/mm/dd y tres columnas no documentadas al final."""
+    path = tmp_path / "QQP_2026" / "06-2026_Q1.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(
+        b"\xef\xbb\xbf" + ("\r\n".join([HEADER_ADICIONALES, *ROWS_ADICIONALES]) + "\r\n").encode("utf-8")
+    )
+    return path
+
+
 @pytest.fixture
 def csv_utf8_bom(tmp_path: Path) -> Path:
     """Formato de 2024-01 a 2026-04: UTF-8 con BOM, CRLF, fechas yyyy/mm/dd."""
