@@ -53,30 +53,51 @@ class Tabla:
     origen: str  # esquema.tabla en DuckDB
     indices: tuple[tuple[str, ...], ...] = ()
     filtro: str | None = None
+    destino: str | None = None  # nombre en PostgreSQL si difiere del de DuckDB
+    solo_semanas_recientes: bool = False  # limitada por QQP_PG_SEMANAS_DETALLE (D-036)
 
     @property
     def nombre(self) -> str:
-        return self.origen.split(".")[1]
+        return self.destino or self.origen.split(".")[1]
 
 
+# Publicación compacta para el plan gratuito de Supabase (D-036): el detalle más pesado se limita a los
+# faltantes o a las semanas recientes; la historia completa queda en las tablas BI agregadas.
 TABLAS = [
     Tabla("marts.mart_canasta_semanal", (("semana_inicio",), ("cadena_key", "geografia_id"))),
     Tabla("marts.mart_ahorro_por_cadena", (("semana_inicio",), ("geografia_id",))),
     Tabla(
-        "marts.mart_precio_producto", (("semana_inicio",), ("articulo_id",), ("geografia_id", "cadena_key"))
+        "marts.mart_precio_producto",
+        (("semana_inicio",), ("articulo_id",), ("geografia_id", "cadena_key")),
+        solo_semanas_recientes=True,
     ),
     Tabla("marts.mart_cobertura_datos", (("semana_inicio",), ("cadena_key", "geografia_id"))),
     Tabla("bi.bi_costo_semanal_cadena", (("semana_inicio",),)),
     Tabla("bi.bi_ahorro_semanal", (("semana_inicio",),)),
     Tabla("bi.bi_diferencias_producto_semanal", (("semana_inicio",), ("articulo_id",))),
+    Tabla("bi.bi_disponibilidad_semanal", (("semana_inicio",), ("articulo_id",))),
     Tabla(
         "bi.bi_disponibilidad_articulos",
-        (("semana_inicio",), ("articulo_id",), ("cadena_key", "geografia_id")),
+        (("semana_inicio",), ("cadena_key", "geografia_id")),
+        filtro="not disponible",
+        destino="bi_articulos_faltantes",
     ),
     Tabla("bi.bi_indice_canasta", (("semana_inicio",),)),
     Tabla("core.dim_canasta", (), "es_version_vigente"),
     Tabla("core.dim_geografia", ()),
 ]
+
+
+def resolver_tablas(semanas_detalle: int) -> list[Tabla]:
+    """Aplica el límite de semanas recientes a las tablas de detalle (0 = sin límite)."""
+    resueltas = []
+    for tabla in TABLAS:
+        if tabla.solo_semanas_recientes and semanas_detalle > 0:
+            limite = f"semana_inicio > (SELECT max(semana_inicio) FROM {tabla.origen}) - 7 * {int(semanas_detalle)}"
+            filtro = f"({tabla.filtro}) AND {limite}" if tabla.filtro else limite
+            tabla = Tabla(tabla.origen, tabla.indices, filtro, tabla.destino, tabla.solo_semanas_recientes)
+        resueltas.append(tabla)
+    return resueltas
 
 
 @dataclass
@@ -89,10 +110,12 @@ class ConfigPostgres:
     sslmode: str = "require"
     esquema: str = "qqp"
     rol_lectura: str | None = None
+    semanas_detalle: int = 52
 
     @classmethod
     def desde_entorno(cls) -> ConfigPostgres:
         return cls(
+            semanas_detalle=int(os.getenv("QQP_PG_SEMANAS_DETALLE") or 52),
             host=os.getenv("SUPABASE_DB_HOST") or None,
             port=os.getenv("SUPABASE_DB_PORT") or None,
             dbname=os.getenv("SUPABASE_DB_NAME") or None,
@@ -246,9 +269,11 @@ def publicar(cfg: ConfigPostgres, db_path: Path = config.DUCKDB_PATH) -> dict[st
     inicio = time.time()
     filas: dict[str, int] = {}
 
+    tablas = resolver_tablas(cfg.semanas_detalle)
+
     with connect(db_path, read_only=True) as con, psycopg.connect(cfg.conninfo()) as pg:
-        metadatos = _metadatos(con)
-        for tabla in TABLAS:
+        metadatos = {**_metadatos(con), "semanas_detalle": cfg.semanas_detalle}
+        for tabla in tablas:
             _columnas(con, tabla)  # falla antes de tocar PostgreSQL si falta una tabla o un tipo
 
         _preparar_meta(pg)
@@ -263,7 +288,7 @@ def publicar(cfg: ConfigPostgres, db_path: Path = config.DUCKDB_PATH) -> dict[st
             pg.execute(sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(sql.Identifier(carga)))
             pg.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(carga)))
             pg.commit()
-            for tabla in TABLAS:
+            for tabla in tablas:
                 filas[tabla.nombre] = _copiar_tabla(con, pg, tabla, carga)
                 pg.commit()
                 print(f"[publish] {tabla.nombre}: {filas[tabla.nombre]:,} filas", flush=True)
@@ -274,7 +299,7 @@ def publicar(cfg: ConfigPostgres, db_path: Path = config.DUCKDB_PATH) -> dict[st
                 ).format(sql.Identifier(carga, "metadatos"))
                 + sql.SQL(" FROM jsonb_to_record(%s::jsonb) AS m(canasta_version text, ultima_semana date, ")
                 + sql.SQL("ultima_fecha_datos date, ultima_carga_utc text, archivos_fuente int, modo text, ")
-                + sql.SQL("commit_git text, ejecucion_ci text)"),
+                + sql.SQL("commit_git text, ejecucion_ci text, semanas_detalle int)"),
                 [id_publicacion, json.dumps(metadatos)],
             )
 

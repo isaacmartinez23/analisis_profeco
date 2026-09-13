@@ -7,17 +7,17 @@ Definiciones de métricas: `docs/catalogo_metricas.md`. Salvedades obligatorias:
 
 ### 1.1 Rol de solo lectura (una vez, en el SQL Editor de Supabase)
 
-Looker Studio no debe usar el usuario `postgres`. Crea un rol que solo pueda leer el esquema publicado. La
-contraseña la eliges tú en el momento; no se guarda en el repositorio.
+Looker Studio no debe usar el usuario `postgres`. Crea un rol de solo lectura. La contraseña la eliges tú en el
+momento; no se guarda en el repositorio.
 
 ```sql
 create role looker_lector login password '<define-una-contraseña-fuerte>';
-grant usage on schema qqp to looker_lector;
-grant select on all tables in schema qqp to looker_lector;
 ```
 
-Define la variable de repositorio `QQP_PG_ROL_LECTURA=looker_lector` en GitHub (Settings → Secrets and variables →
-Actions → Variables). Cada publicación reemplaza el esquema completo y vuelve a otorgar `SELECT` a ese rol.
+No otorgues permisos todavía: el esquema `qqp` no existe hasta la primera publicación. Define la variable de
+repositorio `QQP_PG_ROL_LECTURA=looker_lector` en GitHub (Settings → Secrets and variables → Actions → Variables):
+cada publicación reemplaza el esquema completo y otorga `USAGE` y `SELECT` a ese rol. Crea el rol **antes** de definir
+la variable; si la variable apunta a un rol inexistente, la publicación falla (y conserva la versión anterior).
 
 ### 1.2 Cadena de conexión
 
@@ -50,9 +50,11 @@ Crea una fuente por tabla. Todas se actualizan semanalmente; configura la frescu
 | QQP · Ahorro semanal | `qqp.bi_ahorro_semanal` | semana | Páginas 1 y 3 |
 | QQP · Ahorro por municipio | `qqp.mart_ahorro_por_cadena` | municipio × semana × cadena | Página 3 (detalle) |
 | QQP · Diferencias por producto | `qqp.bi_diferencias_producto_semanal` | semana × artículo | Página 4 |
-| QQP · Precio por producto | `qqp.mart_precio_producto` | municipio × semana × cadena × artículo | Página 4 (detalle) |
+| QQP · Precio por producto | `qqp.mart_precio_producto` | municipio × semana × cadena × artículo (**últimas 52 semanas**) | Página 4 (detalle) |
 | QQP · Cobertura | `qqp.mart_cobertura_datos` | cadena × municipio × semana | Página 5 |
-| QQP · Disponibilidad | `qqp.bi_disponibilidad_articulos` | cadena × municipio × semana × artículo | Página 6 |
+| QQP · Canasta semanal | `qqp.mart_canasta_semanal` | cadena × municipio × semana | Página 6 |
+| QQP · Disponibilidad | `qqp.bi_disponibilidad_semanal` | semana × cadena × artículo (nacional) | Página 6 |
+| QQP · Artículos faltantes | `qqp.bi_articulos_faltantes` | cadena × municipio × semana × artículo sin precio | Página 6 (detalle) |
 | QQP · Índice | `qqp.bi_indice_canasta` | semana × alcance | Páginas 1 y 2 |
 | QQP · Canasta | `qqp.dim_canasta` | artículo | Página 6 y notas |
 | QQP · Geografía | `qqp.dim_geografia` | municipio | Mapa (`estado_iso` como región ISO) |
@@ -135,8 +137,11 @@ Filtro de la página: `es_cadena_referencia = true` (con un control para quitarl
 | Elemento | Tipo | Fuente | Configuración |
 |---|---|---|---|
 | Disponibilidad por artículo y cadena | Tabla dinámica con mapa de calor | Disponibilidad | Filas `articulo`; columnas `cadena`; campo calculado *Disponibilidad* |
-| Canastas completas | Cuadro de resultados | Disponibilidad | Campo calculado *Canastas completas* |
-| Artículos faltantes | Tabla | Disponibilidad | Filtro `disponible = false`; `semana_inicio`, `municipio`, `cadena`, `articulo` |
+| Canastas completas | Cuadro de resultados | Canasta semanal | Filtro `es_cadena_referencia = true`; campo calculado *Canastas completas (%)* |
+| Artículos faltantes | Tabla | Artículos faltantes | `semana_inicio`, `estado`, `municipio`, `cadena`, `articulo` |
+
+Nota visible: "Mapa de disponibilidad nacional. El detalle por municipio lista solo los artículos sin precio en la
+ventana, que son los que dejan incompleta una canasta."
 
 ## 4. Campos calculados
 
@@ -146,8 +151,8 @@ Sintaxis de Looker Studio. Todos son trazables a columnas publicadas.
 |---|---|---|
 | Frecuencia como más barata | Costo por cadena | `SUM(veces_mas_barata) / SUM(municipios_comparables)` (formato porcentaje) |
 | Ahorro anual equivalente | Costo por cadena | `ahorro_mediano_vs_mas_barata * 52` |
-| Disponibilidad | Disponibilidad | `SUM(CASE WHEN disponible THEN 1 ELSE 0 END) / COUNT(articulo_id)` (formato porcentaje) |
-| Canastas completas | Disponibilidad | `COUNT_DISTINCT(CASE WHEN es_canasta_completa THEN CONCAT(CAST(semana_inicio AS TEXT), cadena_key, geografia_id) END)` |
+| Disponibilidad | Disponibilidad | `SUM(celdas_con_articulo) / SUM(celdas)` (formato porcentaje) |
+| Canastas completas (%) | Canasta semanal | `SUM(CASE WHEN es_canasta_completa THEN 1 ELSE 0 END) / COUNT(cadena_key)` (formato porcentaje) |
 | Etiqueta de semana | cualquiera con `semana_inicio` | `CONCAT("Semana del ", FORMAT_DATETIME("%d/%m/%Y", semana_inicio))` |
 
 ## 5. Trazabilidad
@@ -158,7 +163,12 @@ Sintaxis de Looker Studio. Todos son trazables a columnas publicadas.
 | Ahorro máximo | `bi_ahorro_semanal` | `bi_ahorro_semanal.sql` | `mart_ahorro_por_cadena` |
 | Diferencia por artículo | `bi_diferencias_producto_semanal` | `bi_diferencias_producto_semanal.sql` | `mart_precio_producto` (descomposición probada con `assert_descomposicion_ahorro`) |
 | Cobertura | `mart_cobertura_datos` | `marts/mart_cobertura_datos.sql` | `fct_precio_observado` |
-| Disponibilidad | `bi_disponibilidad_articulos` | `bi_disponibilidad_articulos.sql` | `mart_canasta_semanal`, `int_canasta_articulo_semanal` (consistencia probada con `assert_bi_consistente_con_marts`) |
+| Disponibilidad | `bi_disponibilidad_semanal`, `bi_articulos_faltantes` | `bi_disponibilidad_semanal.sql`, `bi_disponibilidad_articulos.sql` (publicada solo con `disponible = false`) | `mart_canasta_semanal`, `int_canasta_articulo_semanal` (consistencia probada con `assert_bi_consistente_con_marts`) |
+
+**Tamaño publicado (D-036).** Para respetar el límite de 500 MB del plan gratuito de Supabase, el detalle de
+precio por producto se publica para las últimas `QQP_PG_SEMANAS_DETALLE` semanas (52 por defecto; `0` = todo) y la
+disponibilidad por municipio solo con los artículos faltantes. La historia completa de los indicadores está en las
+tablas BI y en DuckDB.
 | Índice | `bi_indice_canasta` | `bi_indice_canasta.sql` | `mart_canasta_semanal` |
 
 Cada publicación registra en `qqp_meta.publicaciones` el commit, la ejecución de GitHub Actions, la canasta y el

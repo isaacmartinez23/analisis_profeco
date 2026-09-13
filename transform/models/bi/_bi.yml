@@ -45,6 +45,16 @@ models:
       - expression_is_true:
           arguments: {expression: "disponible = (n_observaciones > 0)"}
 
+  - name: bi_disponibilidad_semanal
+    description: >
+      Vista 5 (resumen) · Disponibilidad nacional por semana × cadena × artículo. `celdas` y
+      `celdas_con_articulo` son sumables. Se publica en lugar del detalle completo (D-036).
+    tests:
+      - unique_combination:
+          arguments: {columns: ["canasta_version", "semana_inicio", "cadena_key", "articulo_id"]}
+      - expression_is_true:
+          arguments: {expression: "celdas_con_articulo between 0 and celdas and pct_disponible between 0 and 100"}
+
   - name: bi_indice_canasta
     description: >
       Índice directo de panel fijo del costo de la canasta (D-026). Grano: versión × semana × alcance.

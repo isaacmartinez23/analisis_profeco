@@ -7,7 +7,7 @@
 #
 # Secretos requeridos para publicar (Settings → Secrets and variables → Actions):
 #   SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_NAME, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD
-# Opcionales: secreto ALERTA_WEBHOOK_URL; variable QQP_PG_ROL_LECTURA.
+# Opcionales: secreto ALERTA_WEBHOOK_URL; variables QQP_PG_ROL_LECTURA y QQP_PG_SEMANAS_DETALLE.
 
 name: Pipeline semanal PROFECO QQP
 
@@ -182,6 +182,7 @@ jobs:
           SUPABASE_DB_USER: ${{ secrets.SUPABASE_DB_USER }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           QQP_PG_ROL_LECTURA: ${{ vars.QQP_PG_ROL_LECTURA }}
+          QQP_PG_SEMANAS_DETALLE: ${{ vars.QQP_PG_SEMANAS_DETALLE }}
         run: python -m src.cli $MODO_FLAG publish
 
       - name: Resumen y alertas de calidad

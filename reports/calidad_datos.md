@@ -1,6 +1,6 @@
 # Reporte de calidad de datos
 
-_Generado por `python -m src.quality.checks` el 2026-09-12 22:00 · modo `completo` · base `qqp.duckdb`._
+_Generado por `python -m src.quality.checks` el 2026-09-13 10:14 · modo `completo` · base `qqp.duckdb`._
 
 Severidad `error` detiene el pipeline y bloquea la publicación; `advertencia` se reporta sin detenerlo.
 Definiciones y justificación de umbrales: `docs/reglas_calidad.md`.
@@ -34,5 +34,5 @@ Definiciones y justificación de umbrales: `docs/reglas_calidad.md`.
 | M-04 | celdas_referencia_canasta_completa_pct             | advertencia |  80.9632 | >= 50       | cumple      | % de celdas cadena de referencia × municipio × semana (ventana completa) con la canasta completa.                                                                                                      |
 | M-05 | articulos_sin_observaciones_ultima_semana          | advertencia |   0      | == 0        | cumple      | Artículos de la canasta sin ninguna observación comparable en la última semana (cadenas de referencia).                                                                                                |
 | M-07 | municipio_semanas_comparables_pct                  | advertencia |  85.2069 | >= 70       | cumple      | % de municipio-semanas con al menos dos cadenas de referencia en la canasta (ventana completa) donde al menos dos tienen la canasta completa y por lo tanto se puede calcular ahorro.                  |
-| M-08 | dias_desde_ultimo_dato                             | advertencia | 106      | <= 35       | alerta      | Días entre la fecha más reciente con precios y la fecha de ejecución. PROFECO publica por quincena; más de 35 días sugiere que no se descargó el archivo vigente o que la fuente dejó de actualizarse. |
+| M-08 | dias_desde_ultimo_dato                             | advertencia | 107      | <= 35       | alerta      | Días entre la fecha más reciente con precios y la fecha de ejecución. PROFECO publica por quincena; más de 35 días sugiere que no se descargó el archivo vigente o que la fuente dejó de actualizarse. |
 | M-06 | filas_crudas_sin_observacion                       | error       |   0      | == 0        | cumple      | Filas crudas con precio y fecha válidos que no llegaron a la tabla de hechos.                                                                                                                          |

@@ -336,6 +336,19 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
   habrían leído mal sin error.
 - **Decisión:** `src/cli.py` ejecuta dbt con `PYTHONUTF8=1` (también en el workflow).
 
+## D-036 · Publicación compacta para el plan gratuito de Supabase (aprobada)
+
+- **Fecha:** 2026-09-13 · **Fase:** 3 · **Aprobó:** responsable del proyecto
+- **Contexto:** El proyecto de Supabase está en el plan gratuito, que pone la base en solo lectura al superar 500 MB
+  de tamaño de base de datos (un proyecto nuevo ya ocupa 40–60 MB). La publicación completa medía 213 MB y el
+  intercambio atómico mantiene dos copias un momento (pico ~425 MB + base), además del crecimiento semanal. Las dos
+  tablas más pesadas eran de detalle: `mart_precio_producto` (95 MB) y `bi_disponibilidad_articulos` (73 MB).
+- **Decisión:** Se publica `bi_disponibilidad_semanal` (agregado nacional) y `bi_articulos_faltantes` (solo
+  `disponible = false`) en lugar del detalle completo de disponibilidad, y `mart_precio_producto` limitado a las
+  últimas `QQP_PG_SEMANAS_DETALLE` semanas (52 por defecto). El intercambio atómico se conserva.
+- **Consecuencias:** Todas las vistas del dashboard siguen disponibles; el detalle precio-producto-municipio anterior a
+  52 semanas solo está en DuckDB. Con un plan de pago basta `QQP_PG_SEMANAS_DETALLE=0`.
+
 ## D-021 · Medianas exactas para resultados deterministas
 
 - **Contexto:** Con `approx_quantile`, dos ejecuciones idénticas dieron 0.0357% y 0.0356% de atípicos y 50.744% y

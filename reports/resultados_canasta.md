@@ -1,6 +1,6 @@
 # Resultados del análisis de la canasta
 
-_Generado por `python -m src.analysis.resultados` el 2026-09-12 22:00 · modo `completo` · canasta `v1` · semanas 2024-01-08 a 2026-05-25._
+_Generado por `python -m src.analysis.resultados` el 2026-09-13 10:14 · modo `completo` · canasta `v1` · semanas 2024-01-08 a 2026-05-25._
 
 Todas las comparaciones entre cadenas son **pareadas**: misma canasta, mismo municipio y misma semana
 (5,230 municipio-semanas en 51 municipios).
@@ -25,12 +25,12 @@ municipio parezca barato solo porque ahí se mide una cadena barata.
 | más baratos | Veracruz            | Boca del Río   |         2 |                        96.90 |          710.39 |
 | más baratos | Ciudad de México    | Tlalpan        |         2 |                        97.70 |          696.51 |
 | más baratos | Estado de México    | Nezahualcóyotl |         2 |                        97.80 |          687.68 |
-| más baratos | Campeche            | Campeche       |         4 |                        98.30 |          702.87 |
 | más baratos | Jalisco             | Guadalajara    |         2 |                        98.30 |          724.45 |
+| más baratos | Campeche            | Campeche       |         4 |                        98.30 |          702.87 |
 | más caros   | Tamaulipas          | Reynosa        |         2 |                       102.10 |          728.12 |
 | más caros   | Ciudad de México    | Coyoacán       |         4 |                       101.40 |          717.38 |
-| más caros   | Baja California Sur | La Paz         |         4 |                       101.20 |          734.86 |
 | más caros   | Michoacán           | Morelia        |         3 |                       101.20 |          729.42 |
+| más caros   | Baja California Sur | La Paz         |         4 |                       101.20 |          734.86 |
 | más caros   | Coahuila            | Saltillo       |         3 |                       100.90 |          747.82 |
 
 ## 2. ¿Cuánto puede ahorrar una familia al elegir la cadena más económica?

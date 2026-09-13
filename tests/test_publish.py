@@ -77,11 +77,13 @@ def duckdb_minimo(tmp_path: Path, monkeypatch) -> Path:
     )
     con.execute("CREATE TABLE core.dim_fecha AS SELECT DATE '2026-05-29' fecha")
     for tabla in postgres.TABLAS:
+        # Tres semanas consecutivas; solo la primera fila tiene el artículo disponible.
         con.execute(
             f"""CREATE TABLE {tabla.origen} AS
-                SELECT 'v1' canasta_version, DATE '2026-05-25' semana_inicio, 'WAL-MART' cadena_key,
-                       'g1' geografia_id, 'ARROZ' articulo_id, 123.45::DECIMAL(12,2) costo,
-                       'Querétaro' municipio, true es_version_vigente
+                SELECT 'v1' canasta_version, DATE '2026-05-25' - 7 * range::INT semana_inicio,
+                       'WAL-MART' cadena_key, 'g1' geografia_id, 'ARROZ' articulo_id,
+                       123.45::DECIMAL(12,2) costo, 'Querétaro' municipio, true es_version_vigente,
+                       range = 0 disponible
                 FROM range(3)"""
         )
     con.close()
@@ -92,6 +94,7 @@ def test_publicacion_atomica_y_reemplazo(dsn, duckdb_minimo):
     cfg = _config(dsn, "qqp_prueba")
     filas = postgres.publicar(cfg, duckdb_minimo)
     assert set(filas) == {t.nombre for t in postgres.TABLAS}
+    assert filas.pop("bi_articulos_faltantes") == 2  # solo artículos no disponibles
     assert all(n == 3 for n in filas.values())
 
     postgres.publicar(cfg, duckdb_minimo)  # segunda publicación reemplaza, no duplica
@@ -110,6 +113,19 @@ def test_publicacion_atomica_y_reemplazo(dsn, duckdb_minimo):
         ]
         assert estados.count("exitosa") >= 2
         assert pg.execute("SELECT canasta_version FROM qqp_prueba.metadatos").fetchone()[0] == "v1"
+
+
+def test_detalle_limitado_a_semanas_recientes(dsn, duckdb_minimo):
+    cfg = _config(dsn, "qqp_semanas")
+    cfg.semanas_detalle = 2
+    filas = postgres.publicar(cfg, duckdb_minimo)
+    assert filas["mart_precio_producto"] == 2  # semanas 2026-05-25 y 2026-05-18
+    assert filas["mart_canasta_semanal"] == 3  # tablas sin límite conservan toda la historia
+
+    cfg.semanas_detalle = 0  # 0 = publicar todo
+    assert postgres.publicar(cfg, duckdb_minimo)["mart_precio_producto"] == 3
+    with psycopg.connect(dsn) as pg:
+        assert pg.execute("SELECT semanas_detalle FROM qqp_semanas.metadatos").fetchone()[0] == 0
 
 
 def test_falla_a_mitad_conserva_la_version_publicada(dsn, duckdb_minimo, monkeypatch):

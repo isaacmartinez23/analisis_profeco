@@ -93,7 +93,8 @@ en Looker Studio usar Mediana o Promedio sobre semanas, nunca Suma.
 | `bi_costo_semanal_cadena` | semana × cadena | `costo_mediano`, `costo_p25`, `costo_p75`, `ahorro_mediano_vs_mas_barata`, `ahorro_mediano_pct`, `pct_veces_mas_barata` | `municipios_comparables`, `veces_mas_barata`, `n_observaciones` |
 | `bi_ahorro_semanal` | semana | `ahorro_maximo_mediano`, `ahorro_maximo_mediano_pct`, `ahorro_maximo_p90`, `ahorro_maximo_mediano_competidores`, `cadena_mas_barata_mas_frecuente` | `municipios_comparables`, `municipios_con_4_cadenas`, `municipios_con_grupos_distintos` |
 | `bi_diferencias_producto_semanal` | semana × artículo | `sobreprecio_mediano_pct`, `precio_unitario_mediano` | `diferencia_acumulada`, `celdas_comparadas`, `celdas_con_sobreprecio` |
-| `bi_disponibilidad_articulos` | semana × cadena × municipio × artículo | `disponible` | `n_observaciones`, `n_establecimientos` |
+| `bi_disponibilidad_semanal` | semana × cadena × artículo | `pct_disponible` | `celdas`, `celdas_con_articulo`, `n_observaciones` |
+| `bi_disponibilidad_articulos` (en Supabase: `bi_articulos_faltantes`, solo faltantes) | semana × cadena × municipio × artículo | `disponible` | `n_observaciones`, `n_establecimientos` |
 | `bi_indice_canasta` | semana × alcance | `indice_base_100` | `pares` |
 
 `ahorro_maximo_mediano_competidores` excluye municipio-semanas donde solo se comparan cadenas del mismo grupo

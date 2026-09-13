@@ -192,11 +192,13 @@ Publicación atómica (D-029). Todas se reemplazan completas en cada ejecución 
 
 | Tabla | Grano | Llave primaria | Fuente dbt |
 |---|---|---|---|
-| `mart_canasta_semanal`, `mart_ahorro_por_cadena`, `mart_precio_producto`, `mart_cobertura_datos` | ver secciones de cada mart | ídem | `transform/models/marts/` |
+| `mart_canasta_semanal`, `mart_ahorro_por_cadena`, `mart_cobertura_datos` | ver secciones de cada mart | ídem | `transform/models/marts/` |
+| `mart_precio_producto` | ídem, limitado a las últimas `QQP_PG_SEMANAS_DETALLE` semanas (52) | ídem | `transform/models/marts/` (D-036) |
 | `bi_costo_semanal_cadena` | versión × semana × cadena | `canasta_version`, `semana_inicio`, `cadena_key` | `transform/models/bi/` |
 | `bi_ahorro_semanal` | versión × semana | `canasta_version`, `semana_inicio` | `transform/models/bi/` |
 | `bi_diferencias_producto_semanal` | versión × semana × artículo | `canasta_version`, `semana_inicio`, `articulo_id` | `transform/models/bi/` |
-| `bi_disponibilidad_articulos` | versión × semana × cadena × municipio × artículo | las cinco columnas | `transform/models/bi/` |
+| `bi_disponibilidad_semanal` | versión × semana × cadena × artículo | las cuatro columnas | `transform/models/bi/` |
+| `bi_articulos_faltantes` | versión × semana × cadena × municipio × artículo, solo sin precio | las cinco columnas | `bi_disponibilidad_articulos` con `disponible = false` (D-036) |
 | `bi_indice_canasta` | versión × semana × alcance | `canasta_version`, `semana_inicio`, `alcance` | `transform/models/bi/` |
 | `dim_canasta` | artículo de la versión vigente | `articulo_id` | `core.dim_canasta` |
 | `dim_geografia` | municipio | `geografia_id` | `core.dim_geografia` (incluye `estado_iso`) |
