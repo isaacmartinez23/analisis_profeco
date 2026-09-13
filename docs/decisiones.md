@@ -274,6 +274,68 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
   como propuesta del asistente. No afectan a las cadenas de referencia.
 - **Consecuencias:** Cobertura por cadena sin duplicar la central de abasto.
 
+## D-029 · Publicación atómica por intercambio de esquemas
+
+- **Fecha:** 2026-09-12 · **Fase:** 3
+- **Contexto:** CLAUDE.md exige no publicar parcialmente. Una carga tabla por tabla deja a Looker Studio viendo una
+  mezcla de versiones si falla a la mitad.
+- **Decisión:** `src/publish/postgres.py` carga todo en `<esquema>_carga` con `COPY`, verifica filas contra DuckDB,
+  crea índices y en **una transacción** renombra `<esquema>` → `<esquema>_anterior`, `<esquema>_carga` → `<esquema>`,
+  borra el anterior y otorga lectura al rol configurado. Bitácora en `qqp_meta.publicaciones` (fuera del esquema
+  intercambiado) y fila de `metadatos` dentro.
+- **Consecuencias:** Probado contra PostgreSQL 16 real: reemplazo sin duplicados, fallo simulado a mitad de carga
+  conserva la versión anterior. Los permisos se re-otorgan en cada publicación (las tablas son nuevas).
+
+## D-030 · Se publican marts y tablas BI, no la tabla de hechos
+
+- **Contexto:** `fct_precio_observado` tiene 33 millones de filas; el dashboard necesita agregados.
+- **Decisión:** Se publican 4 marts, 5 tablas BI (`transform/models/bi/`, construidas y probadas en dbt), `dim_canasta`
+  vigente y `dim_geografia` (~783 mil filas en total). Las vistas del dashboard son tablas precalculadas en dbt, no
+  vistas SQL en PostgreSQL, para que su lógica tenga pruebas y una sola fuente.
+- **Consecuencias:** El reporte `resultados_canasta.md` y el dashboard leen el índice de la misma tabla
+  (`bi_indice_canasta`). La trazabilidad hasta el dato crudo se hace en DuckDB.
+
+## D-031 · Conexión a Supabase por el pooler en modo sesión
+
+- **Contexto:** Según la documentación de Supabase, la conexión directa es IPv6 y GitHub Actions solo acepta IPv4; el
+  modo transacción del pooler no admite *prepared statements* (psycopg los activa automáticamente).
+- **Decisión:** Secretos `SUPABASE_DB_*` con el host y usuario del **Session pooler** (puerto 5432), `sslmode=require`
+  por defecto. Looker Studio usa el mismo pooler con un rol de solo lectura.
+- **Consecuencias:** No se requiere el complemento de IPv4 de pago.
+
+## D-032 · Descarga de fuentes oficiales con enlaces versionados
+
+- **Contexto:** El portal https://datos.profeco.gob.mx/datos_abiertos/qqp.php publica un archivo por año con enlaces
+  de token opaco; una petición HEAD confirmó que devuelven `QQP_2024.rar`, `QQP_2025.rar` y `QQP_2026.zip`, sin `ETag`
+  ni `Last-Modified`.
+- **Decisión:** `data/fuentes_profeco.csv` versiona los enlaces; `src/ingest/download.py` verifica nombre declarado y
+  firma ZIP/RAR, y nunca sobrescribe un original distinto salvo con `QQP_DESCARGA_REEMPLAZAR=1` (usado en CI, donde el
+  runner empieza vacío). En local los archivos se siguen colocando a mano.
+- **Consecuencias:** Un año nuevo requiere agregar su enlace. Como no hay metadatos de cambio, CI descarga los ~300 MB
+  cada semana.
+
+## D-033 · GitHub Actions: pruebas en cada cambio y pipeline completo semanal
+
+- **Decisión:** Un workflow con dos jobs. `pruebas` (push y pull request): lint, pytest con PostgreSQL de servicio y
+  pipeline de la muestra con publicación de prueba. `pipeline` (lunes 13:00 UTC y a demanda): descarga, un paso de
+  GitHub por paso del pipeline, borrado de CSV extraídos tras la ingesta para no agotar el disco del runner,
+  publicación solo si todo pasa, artefactos de reportes y un issue `alerta-pipeline` si algo falla.
+- **Consecuencias:** El pipeline con datos completos no se ha ejecutado aún en GitHub (el repositorio no tiene remoto);
+  los tiempos estimados se basan en la ejecución local.
+
+## D-034 · Alertas: resumen de ejecución, webhook opcional y frescura de datos
+
+- **Decisión:** `src/alertas.py` escribe el resumen en `$GITHUB_STEP_SUMMARY` y, si existe `ALERTA_WEBHOOK_URL`, notifica
+  fallas y reglas en alerta (Slack, Teams o Discord). `src/cli.py` genera la alerta de falla automáticamente en
+  cualquier paso. Nueva regla M-08 (advertencia): más de 35 días desde el último dato.
+- **Consecuencias:** Con los archivos actuales M-08 ya está en alerta (106 días: datos al 2026-05-29).
+
+## D-035 · dbt en modo UTF-8
+
+- **Contexto:** En Windows dbt leyó `dbt_project.yml` con cp1252 y falló con un carácter acentuado; otros acentos se
+  habrían leído mal sin error.
+- **Decisión:** `src/cli.py` ejecuta dbt con `PYTHONUTF8=1` (también en el workflow).
+
 ## D-021 · Medianas exactas para resultados deterministas
 
 - **Contexto:** Con `approx_quantile`, dos ejecuciones idénticas dieron 0.0357% y 0.0356% de atípicos y 50.744% y

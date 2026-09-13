@@ -1,0 +1,227 @@
+# Pipeline de precios PROFECO QQP.
+#
+# - pruebas: en cada push y pull request. Lint, pruebas unitarias y de integración (PostgreSQL de servicio) y el
+#   pipeline completo con la muestra versionada, incluida una publicación de prueba.
+# - pipeline: cada lunes y a demanda. Descarga los archivos oficiales, ejecuta cada paso por separado para que la
+#   falla sea visible, publica en Supabase solo si todas las pruebas y validaciones pasaron, y alerta si algo falla.
+#
+# Secretos requeridos para publicar (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_NAME, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD
+# Opcionales: secreto ALERTA_WEBHOOK_URL; variable QQP_PG_ROL_LECTURA.
+
+name: Pipeline semanal PROFECO QQP
+
+on:
+  schedule:
+    - cron: "0 13 * * 1" # lunes 13:00 UTC (07:00 en la Ciudad de México)
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: Datos a procesar
+        type: choice
+        options: [completo, muestra]
+        default: completo
+      publicar:
+        description: Publicar en Supabase si todo pasa
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-qqp-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PYTHON_VERSION: "3.12"
+  PYTHONUTF8: "1"
+  QQP_DUCKDB_THREADS: "4"
+  QQP_DUCKDB_MEMORY_LIMIT: "10GB"
+
+jobs:
+  pruebas:
+    name: Pruebas y pipeline con la muestra
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          # Contenedor desechable del runner, sin datos reales.
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: qqp_prueba
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Pruebas unitarias y de integración
+        env:
+          QQP_TEST_PG_DSN: postgresql://postgres:postgres@localhost:5432/qqp_prueba
+        run: pytest -q
+
+      - name: Pipeline con la muestra y publicación de prueba
+        env:
+          SUPABASE_DB_HOST: localhost
+          SUPABASE_DB_PORT: "5432"
+          SUPABASE_DB_NAME: qqp_prueba
+          SUPABASE_DB_USER: postgres
+          SUPABASE_DB_PASSWORD: postgres
+          SUPABASE_DB_SSLMODE: disable
+          ALERTA_SOLO_FALLOS: "1"
+        run: python -m src.cli --muestra pipeline
+
+      - name: Guardar reportes de la muestra
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-muestra-${{ github.run_id }}
+          path: data/processed/muestra/reports/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  pipeline:
+    name: Pipeline completo y publicación
+    needs: pruebas
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    permissions:
+      contents: read
+      issues: write
+    env:
+      MODO_FLAG: ${{ github.event_name == 'workflow_dispatch' && inputs.modo == 'muestra' && '--muestra' || '' }}
+      PUBLICAR: ${{ github.event_name == 'schedule' || inputs.publicar }}
+      ALERTA_WEBHOOK_URL: ${{ secrets.ALERTA_WEBHOOK_URL }}
+      # El runner empieza vacío en cada ejecución: la versión descargada es la vigente.
+      QQP_DESCARGA_REEMPLAZAR: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Herramientas del sistema (lectura de RAR)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libarchive-tools
+
+      - name: Liberar espacio en disco
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h .
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Descargar archivos oficiales de PROFECO
+        if: env.MODO_FLAG == ''
+        run: python -m src.cli download
+
+      - name: Inspección
+        run: python -m src.cli $MODO_FLAG inspect
+
+      - name: Ingesta a DuckDB
+        run: python -m src.cli $MODO_FLAG ingest
+
+      - name: Calidad de la capa cruda
+        run: python -m src.cli $MODO_FLAG quality
+
+      - name: Liberar CSV extraídos (ya cargados en DuckDB)
+        if: env.MODO_FLAG == ''
+        run: |
+          rm -rf data/interim/csv
+          df -h .
+
+      - name: Normalización
+        run: python -m src.cli $MODO_FLAG normalize
+
+      - name: Transformaciones dbt
+        run: python -m src.cli $MODO_FLAG dbt-run
+
+      - name: Pruebas dbt
+        run: python -m src.cli $MODO_FLAG dbt-test
+
+      - name: Calidad del modelo
+        run: python -m src.cli $MODO_FLAG quality-marts
+
+      - name: Validación independiente
+        run: python -m src.cli $MODO_FLAG validate
+
+      - name: Resultados
+        run: python -m src.cli $MODO_FLAG resultados
+
+      - name: Publicación en Supabase
+        if: env.PUBLICAR == 'true'
+        env:
+          SUPABASE_DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+          SUPABASE_DB_PORT: ${{ secrets.SUPABASE_DB_PORT }}
+          SUPABASE_DB_NAME: ${{ secrets.SUPABASE_DB_NAME }}
+          SUPABASE_DB_USER: ${{ secrets.SUPABASE_DB_USER }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          QQP_PG_ROL_LECTURA: ${{ vars.QQP_PG_ROL_LECTURA }}
+        run: python -m src.cli $MODO_FLAG publish
+
+      - name: Resumen y alertas de calidad
+        run: python -m src.cli $MODO_FLAG alertas
+
+      - name: Guardar reportes y resultados de dbt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-${{ github.run_id }}
+          path: |
+            reports/
+            data/processed/muestra/reports/
+            transform/target/run_results.json
+            data/interim/descargas/registro_descargas.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Abrir o actualizar issue de alerta
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const url = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const cuerpo = [
+              `La ejecución ${url} del pipeline falló.`,
+              `- Evento: \`${context.eventName}\``,
+              `- Commit: \`${context.sha.slice(0, 7)}\``,
+              '',
+              'No se publicó nada nuevo: la versión anterior en Supabase sigue vigente.',
+              'Revisa el paso fallido, el resumen de la ejecución y el artefacto de reportes.',
+            ].join('\n');
+            const { data: abiertos } = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: 'alerta-pipeline',
+            });
+            if (abiertos.length > 0) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: abiertos[0].number, body: cuerpo });
+            } else {
+              await github.rest.issues.create({
+                owner, repo, title: 'Falla del pipeline semanal PROFECO QQP', body: cuerpo, labels: ['alerta-pipeline'],
+              });
+            }

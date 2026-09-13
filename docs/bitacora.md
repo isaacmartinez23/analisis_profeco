@@ -248,4 +248,58 @@ Ninguno de los incidentes dañó datos: la ingesta es transaccional y los modelo
 - Representatividad: mediana de 1 tienda y 1 día por celda (L-17); la canasta genérica mezcla marcas (L-18).
 - Siguiente fase: publicación en Supabase, vistas para Looker Studio, GitHub Actions y alertas.
 
-**Fase 2 lista para aprobación.**
+**Fase 2 lista para aprobación.** Aprobada; commit `59e5c83`.
+
+---
+
+## 2026-09-12 · Fase 3 — Publicación y automatización
+
+### Fuentes externas verificadas
+
+| Qué | Cómo se verificó | Resultado |
+|---|---|---|
+| Enlaces oficiales de descarga | Portal https://datos.profeco.gob.mx/datos_abiertos/qqp.php + petición HEAD (sin descargar) | Devuelven `QQP_2024.rar`, `QQP_2025.rar`, `QQP_2026.zip`; sin `ETag` ni `Last-Modified` |
+| Diccionario oficial | https://datos.profeco.gob.mx/diccionarioDatosQQP.php | Mismas 15 columnas; precio = "venta al público"; no documenta catálogos, moneda ni IVA |
+| Conexión a Supabase desde CI | Documentación oficial de Supabase | Conexión directa IPv6; GitHub Actions es solo IPv4 → pooler en modo sesión (D-031) |
+| Actualizaciones retroactivas de PROFECO | Página de datos.gob.mx | No verificado (HTTP 403); no se asume |
+
+### Construido
+
+| Componente | Entregable |
+|---|---|
+| Descarga | `src/ingest/download.py`, `data/fuentes_profeco.csv` (D-032) |
+| Vistas BI | `transform/models/bi/` (5 tablas), seed `estados_iso`, `dim_geografia.estado_iso` (D-030) |
+| Publicación | `src/publish/postgres.py`: carga a esquema temporal, verificación de filas, intercambio atómico, bitácora `qqp_meta.publicaciones` (D-029) |
+| Automatización | `.github/workflows/pipeline-semanal.yml` (D-033) |
+| Alertas | `src/alertas.py`, alerta automática ante cualquier falla en `src/cli.py`, regla M-08 (D-034) |
+| Configuración | `.env.example` (solo nombres), carga opcional de `.env` local |
+| Dashboard | `docs/dashboard_looker_studio.md` (conexión, rol de lectura, 11 fuentes, 6 páginas, campos calculados, trazabilidad) |
+
+### Incidentes y correcciones
+
+1. **dbt leía YAML con cp1252 en Windows** (falló con "Índice") → dbt en modo UTF-8 (D-035).
+2. **Colisión de `id_publicacion`** con resolución de segundos, detectada por la prueba de integración (dos
+   publicaciones en el mismo segundo) → microsegundos + sufijo aleatorio.
+3. **`commit` como nombre de columna** (palabra reservada de PostgreSQL) → `commit_git`, `ejecucion_ci`.
+4. **Prioridad de herramienta RAR**: `7z` de Ubuntu puede no traer el códec RAR → `bsdtar` primero y
+   `libarchive-tools` en el workflow.
+
+### Evidencia
+
+| Prueba | Resultado |
+|---|---|
+| `pytest -q` | 72 pruebas pasan, incluidas 2 de integración contra PostgreSQL 16 real (embebido con `pgserver`) |
+| Publicación atómica | Reemplazo sin duplicados ni esquemas residuales; fallo simulado a mitad de carga conserva la versión anterior y registra `fallida` |
+| Pipeline completo + publicación en PostgreSQL local | `pipeline --desde dbt-run`: 21 modelos, 148 pruebas dbt, 24/24 validaciones, 11 tablas y 782,970 filas publicadas en 6 s; código 0 en 154 s |
+| Fidelidad de la publicación | Sumas de control idénticas entre DuckDB y PostgreSQL en 6 tablas; tipos `date`, `double precision`, `bigint`, `boolean`, `text` |
+| Pipeline de la muestra | Código 0 en 17 s |
+| Workflow | YAML válido; 2 jobs, 27 pasos; los 13 pasos del CLI que invoca existen |
+| `ruff check .` / `ruff format --check .` | Sin errores |
+
+### No verificado todavía
+
+- El workflow no se ha ejecutado en GitHub (no hay remoto) y no se ha publicado contra Supabase (no hay credenciales).
+- La descarga real de los ~300 MB desde PROFECO no se ejecutó en local (se probó con respuestas simuladas y HEAD).
+- El dashboard de Looker Studio está especificado, no construido.
+
+**Fase 3 lista para aprobación.**

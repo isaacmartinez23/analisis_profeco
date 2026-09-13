@@ -303,6 +303,19 @@ REGLAS_MARTS = [
         ),
     ),
     Regla(
+        "M-08",
+        "marts",
+        "dias_desde_ultimo_dato",
+        "Días entre la fecha más reciente con precios y la fecha de ejecución. PROFECO publica por quincena; "
+        "más de 35 días sugiere que no se descargó el archivo vigente o que la fuente dejó de actualizarse.",
+        "advertencia",
+        "<=",
+        35,
+        lambda con: float(
+            (date.today() - con.execute("SELECT max(fecha) FROM core.dim_fecha").fetchone()[0]).days
+        ),
+    ),
+    Regla(
         "M-06",
         "marts",
         "filas_crudas_sin_observacion",

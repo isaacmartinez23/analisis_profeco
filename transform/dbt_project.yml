@@ -19,6 +19,8 @@ vars:
   atipico_min_observaciones: 30  # Q-ATIP-02 solo aplica con suficiente historia
   # Ventana de la serie semanal (D-010): semana actual + semanas previas
   semanas_ventana_previas: 1
+  # Índice directo de panel fijo (D-026): semanas que forman el periodo base
+  indice_semanas_base: 8
 
 models:
   qqp:
@@ -37,6 +39,9 @@ models:
     marts:
       +materialized: table
       +schema: marts
+    bi:
+      +materialized: table
+      +schema: bi
 
 seeds:
   qqp:

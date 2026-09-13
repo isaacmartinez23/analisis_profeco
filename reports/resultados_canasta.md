@@ -1,6 +1,6 @@
 # Resultados del análisis de la canasta
 
-_Generado por `python -m src.analysis.resultados` el 2026-09-12 19:11 · modo `completo` · canasta `v1` · semanas 2024-01-08 a 2026-05-25._
+_Generado por `python -m src.analysis.resultados` el 2026-09-12 22:00 · modo `completo` · canasta `v1` · semanas 2024-01-08 a 2026-05-25._
 
 Todas las comparaciones entre cadenas son **pareadas**: misma canasta, mismo municipio y misma semana
 (5,230 municipio-semanas en 51 municipios).
@@ -63,7 +63,7 @@ acumulaba ~3 puntos de deriva (D-026). Promedio mensual de los índices semanale
 |:--------|------------------:|-----------------:|
 | 2024-01 |             100.2 |            132.0 |
 | 2024-02 |              99.6 |            134.8 |
-| 2024-03 |              99.0 |            134.8 |
+| 2024-03 |              98.9 |            134.8 |
 | 2024-04 |              97.5 |            133.0 |
 | 2024-05 |              95.6 |            136.2 |
 | 2024-06 |              97.6 |            138.5 |
@@ -79,7 +79,7 @@ acumulaba ~3 puntos de deriva (D-026). Promedio mensual de los índices semanale
 | 2025-04 |              98.9 |            110.8 |
 | 2025-05 |             101.3 |            113.5 |
 | 2025-06 |             101.1 |            120.6 |
-| 2025-07 |             100.2 |            128.2 |
+| 2025-07 |             100.1 |            128.2 |
 | 2025-08 |              98.9 |            128.8 |
 | 2025-09 |              99.2 |            123.8 |
 | 2025-10 |              98.9 |            125.5 |

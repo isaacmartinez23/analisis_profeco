@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: bi_costo_semanal_cadena
+    description: >
+      Vista 1 · Costo semanal de la canasta por cadena de referencia, en municipio-semanas comparables.
+      Grano: versión × semana × cadena. Fuente: mart_ahorro_por_cadena.
+    tests:
+      - unique_combination: {arguments: {columns: ["canasta_version", "semana_inicio", "cadena_key"]}}
+      - expression_is_true:
+          arguments: {expression: "costo_p25 <= costo_mediano and costo_mediano <= costo_p75"}
+      - expression_is_true:
+          arguments: {expression: "veces_mas_barata between 0 and municipios_comparables"}
+
+  - name: bi_ahorro_semanal
+    description: >
+      Vista 2 · Ahorro potencial entre cadenas por semana (nacional). Grano: versión × semana.
+      Fuente: mart_ahorro_por_cadena.
+    tests:
+      - unique_combination: {arguments: {columns: ["canasta_version", "semana_inicio"]}}
+      - expression_is_true:
+          arguments: {expression: "municipios_con_4_cadenas <= municipios_comparables and ahorro_maximo_mediano >= 0"}
+    columns:
+      - name: cadena_mas_barata_mas_frecuente
+        tests: [not_null]
+
+  - name: bi_diferencias_producto_semanal
+    description: >
+      Vista 3 · Diferencias por producto. Grano: versión × semana × artículo. `diferencia_acumulada` es sumable
+      y su suma sobre artículos reproduce el ahorro total. Fuente: mart_precio_producto.
+    tests:
+      - unique_combination: {arguments: {columns: ["canasta_version", "semana_inicio", "articulo_id"]}}
+    columns:
+      - name: precio_unitario_mediano
+        tests:
+          - expression_is_true: {arguments: {expression: "precio_unitario_mediano > 0"}}
+
+  - name: bi_disponibilidad_articulos
+    description: >
+      Vista 5 · Disponibilidad de cada artículo en cada canasta (incluye faltantes). Grano: versión × semana ×
+      cadena de referencia × municipio × artículo. Vista 4 (cobertura) usa directamente mart_cobertura_datos.
+    tests:
+      - unique_combination:
+          arguments: {columns: ["canasta_version", "semana_inicio", "cadena_key", "geografia_id", "articulo_id"]}
+      - expression_is_true:
+          arguments: {expression: "disponible = (n_observaciones > 0)"}
+
+  - name: bi_indice_canasta
+    description: >
+      Índice directo de panel fijo del costo de la canasta (D-026). Grano: versión × semana × alcance.
+    tests:
+      - unique_combination: {arguments: {columns: ["canasta_version", "semana_inicio", "alcance"]}}
+      - expression_is_true:
+          arguments: {expression: "indice_base_100 > 0 and pares >= 1"}

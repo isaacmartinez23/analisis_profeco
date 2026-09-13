@@ -116,20 +116,13 @@ def calcular(con) -> dict[str, pd.DataFrame]:
 
     # 3. Evolución: índice directo con panel fijo (D-026). Pares cadena-municipio con canasta completa en el
     # periodo base (primeras 8 semanas); cada semana compara su costo contra su propio costo base.
+    # Misma fuente que el dashboard: bi.bi_indice_canasta.
     r["indice"] = _df(
         con,
-        """WITH m AS (
-               SELECT cadena_key, geografia_id, semana_inicio, costo_canasta
-               FROM marts.mart_canasta_semanal
-               WHERE es_cadena_referencia AND es_canasta_completa AND ventana_completa),
-           inicio AS (SELECT min(semana_inicio) AS s0 FROM m),
-           base AS (
-               SELECT cadena_key, geografia_id, median(costo_canasta) AS costo_base
-               FROM m, inicio WHERE semana_inicio < s0 + 56 GROUP BY 1, 2)
-           SELECT semana_inicio, count(*) AS pares,
-                  round(100 * exp(avg(ln(costo_canasta / costo_base))), 1) AS indice_base_100
-           FROM m JOIN base USING (cadena_key, geografia_id)
-           GROUP BY 1 ORDER BY 1""",
+        """SELECT semana_inicio, pares, indice_base_100
+           FROM bi.bi_indice_canasta
+           WHERE alcance = 'Todas las cadenas de referencia'
+           ORDER BY semana_inicio""",
     )
     ind = r["indice"]
     if len(ind):

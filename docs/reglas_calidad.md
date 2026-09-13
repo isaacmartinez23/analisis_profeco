@@ -39,6 +39,14 @@ número incorrecto de columnas) y la ingesta rechaza formatos de fecha no recono
 | M-05 | Artículos sin observaciones en la última semana | advertencia | = 0 | Un artículo que desaparece rompe la canasta completa. |
 | M-06 | Filas válidas que no llegaron a la tabla de hechos | error | = 0 | Garantiza que la consolidación no pierde registros. |
 | M-07 | Municipio-semanas con ≥2 cadenas de referencia donde ≥2 tienen canasta completa | advertencia | ≥ 70% | Base mínima para estimar ahorro con comparaciones pareadas (D-023). |
+| M-08 | Días desde la fecha más reciente con precios | advertencia | ≤ 35 | PROFECO publica por quincena; más de 35 días indica que no se descargó el archivo vigente o que la fuente se detuvo (D-034). |
+
+## Alertas
+
+Cualquier paso que falle dispara `src/alertas.py` con estado `fallo`; al final de una ejecución exitosa se reportan
+las reglas en alerta. Destinos: resumen de GitHub Actions, webhook opcional (`ALERTA_WEBHOOK_URL`) e issue
+`alerta-pipeline` en el repositorio (workflow). La publicación nunca ocurre si falló una regla `error`, una prueba dbt
+o la validación independiente.
 
 ## Validación independiente (compuerta)
 

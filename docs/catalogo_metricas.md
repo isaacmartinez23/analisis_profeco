@@ -78,9 +78,26 @@ que perdió.
 
 | Métrica | Fórmula | Grano | Fuente |
 |---|---|---|---|
-| Índice encadenado | 100 × Π mediana(`costo_canasta_t / costo_canasta_{t−1}`) sobre pares cadena-municipio con canasta completa en semanas consecutivas | semana | derivada en reporte |
+| `indice_base_100` | 100 × exp(promedio(ln(`costo_canasta / costo_base`))) sobre pares cadena-municipio con canasta completa; `costo_base` = mediana del par en las primeras 8 semanas | semana × alcance | `bi_indice_canasta` |
 
-No se usa el promedio simple del costo por semana porque cambia la mezcla de municipios con canasta completa.
+No se usa el promedio simple del costo por semana porque cambia la mezcla de municipios con canasta completa, ni un
+índice encadenado porque acumula deriva (D-026).
+
+## Tablas BI para el dashboard
+
+Precalculadas en dbt (`transform/models/bi/`) y publicadas en Supabase. Medianas y percentiles **no son sumables**:
+en Looker Studio usar Mediana o Promedio sobre semanas, nunca Suma.
+
+| Tabla | Grano | Métricas | Sumables |
+|---|---|---|---|
+| `bi_costo_semanal_cadena` | semana × cadena | `costo_mediano`, `costo_p25`, `costo_p75`, `ahorro_mediano_vs_mas_barata`, `ahorro_mediano_pct`, `pct_veces_mas_barata` | `municipios_comparables`, `veces_mas_barata`, `n_observaciones` |
+| `bi_ahorro_semanal` | semana | `ahorro_maximo_mediano`, `ahorro_maximo_mediano_pct`, `ahorro_maximo_p90`, `ahorro_maximo_mediano_competidores`, `cadena_mas_barata_mas_frecuente` | `municipios_comparables`, `municipios_con_4_cadenas`, `municipios_con_grupos_distintos` |
+| `bi_diferencias_producto_semanal` | semana × artículo | `sobreprecio_mediano_pct`, `precio_unitario_mediano` | `diferencia_acumulada`, `celdas_comparadas`, `celdas_con_sobreprecio` |
+| `bi_disponibilidad_articulos` | semana × cadena × municipio × artículo | `disponible` | `n_observaciones`, `n_establecimientos` |
+| `bi_indice_canasta` | semana × alcance | `indice_base_100` | `pares` |
+
+`ahorro_maximo_mediano_competidores` excluye municipio-semanas donde solo se comparan cadenas del mismo grupo
+empresarial. Consistencia con los marts probada por `assert_bi_consistente_con_marts`.
 
 ## Cobertura y calidad
 

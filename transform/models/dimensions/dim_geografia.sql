@@ -28,9 +28,11 @@ select
     m.estado_key,
     m.municipio_key,
     e.estado,
+    i.estado_iso,
     m.municipio,
     m.n_establecimientos,
     m.primera_fecha,
     m.ultima_fecha
 from municipios as m
 inner join estados as e using (estado_key)
+left join {{ ref('estados_iso') }} as i using (estado_key)

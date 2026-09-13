@@ -17,6 +17,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6", "nbformat>=5", "nbclient>=0.10", "ipykernel>=6"]
+# PostgreSQL embebido para correr en local las pruebas de integración del publicador (en CI se usa un servicio).
+pg-local = ["pgserver>=0.1.4"]
 
 [tool.ruff]
 line-length = 110

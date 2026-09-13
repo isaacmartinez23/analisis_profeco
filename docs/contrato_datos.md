@@ -131,7 +131,7 @@ Columnas: `establecimiento_id`, `establecimiento_key`, `nombre_comercial`, `dire
 |---|---|
 | Grano | Municipio (estado + municipio sin acentos). |
 | Llave primaria | `geografia_id = md5(estado_key \| municipio_key)` |
-| Columnas | `geografia_id`, `estado_key`, `municipio_key`, `estado`, `municipio` (VARCHAR), `n_establecimientos BIGINT`, `primera_fecha`, `ultima_fecha` (DATE) |
+| Columnas | `geografia_id`, `estado_key`, `municipio_key`, `estado`, `estado_iso` (ISO 3166-2:MX, seed `estados_iso`), `municipio` (VARCHAR), `n_establecimientos BIGINT`, `primera_fecha`, `ultima_fecha` (DATE) |
 | Supuestos | Nombre mostrado = escritura más reciente (con acentos desde 2026). Son ciudades muestreadas, no entidades completas. |
 
 ## core.dim_fecha
@@ -185,6 +185,33 @@ Columnas: `establecimiento_id`, `establecimiento_key`, `nombre_comercial`, `dire
 | `min_observaciones_por_articulo` | BIGINT | Artículo con menos respaldo |
 | `max_establecimientos_por_articulo` | BIGINT | Tiendas distintas del artículo con más cobertura |
 | `ventana_completa` | BOOLEAN | La ventana no está truncada por el inicio de la serie |
+
+## Tablas publicadas en Supabase (esquema `qqp`)
+
+Publicación atómica (D-029). Todas se reemplazan completas en cada ejecución exitosa.
+
+| Tabla | Grano | Llave primaria | Fuente dbt |
+|---|---|---|---|
+| `mart_canasta_semanal`, `mart_ahorro_por_cadena`, `mart_precio_producto`, `mart_cobertura_datos` | ver secciones de cada mart | ídem | `transform/models/marts/` |
+| `bi_costo_semanal_cadena` | versión × semana × cadena | `canasta_version`, `semana_inicio`, `cadena_key` | `transform/models/bi/` |
+| `bi_ahorro_semanal` | versión × semana | `canasta_version`, `semana_inicio` | `transform/models/bi/` |
+| `bi_diferencias_producto_semanal` | versión × semana × artículo | `canasta_version`, `semana_inicio`, `articulo_id` | `transform/models/bi/` |
+| `bi_disponibilidad_articulos` | versión × semana × cadena × municipio × artículo | las cinco columnas | `transform/models/bi/` |
+| `bi_indice_canasta` | versión × semana × alcance | `canasta_version`, `semana_inicio`, `alcance` | `transform/models/bi/` |
+| `dim_canasta` | artículo de la versión vigente | `articulo_id` | `core.dim_canasta` |
+| `dim_geografia` | municipio | `geografia_id` | `core.dim_geografia` (incluye `estado_iso`) |
+| `metadatos` | una fila por publicación vigente | `id_publicacion` | generada por `src/publish/postgres.py` |
+
+Tipos: `VARCHAR`→`text`, `DOUBLE`→`double precision`, `DECIMAL(p,s)`→`numeric(p,s)`, `BIGINT`→`bigint`,
+`INTEGER`→`integer`, `BOOLEAN`→`boolean`, `DATE`→`date`, `TIMESTAMP`→`timestamp`. Un tipo sin equivalente
+(`HUGEINT`) detiene la publicación.
+
+### qqp_meta.publicaciones
+
+Bitácora persistente (no se intercambia): `id_publicacion text PK`, `iniciada_utc`, `finalizada_utc timestamptz`,
+`estado text` (`en_proceso`, `exitosa`, `fallida`), `esquema text`, `metadatos jsonb` (versión de canasta, última
+semana y fecha de datos, archivos fuente, modo, commit y ejecución de CI), `filas jsonb` (filas por tabla),
+`mensaje text` (error si falló).
 
 ## marts.mart_ahorro_por_cadena
 

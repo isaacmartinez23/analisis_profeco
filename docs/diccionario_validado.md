@@ -63,7 +63,32 @@ Cifras reproducibles en `reports/perfil_datos.md`.
 | A-12 | Sin cobertura en Colima ni Nayarit; Hidalgo con 70 de 126 semanas | Geografía | Documentar como limitación; no imputar. |
 | A-13 | Pocas zonas urbanas: la mayoría de los estados tiene 1 municipio (la capital); CDMX 13 alcaldías y Estado de México 17 municipios | Geografía | Interpretar como “ciudades muestreadas”, no representatividad estatal. |
 
-## 4. Interpretaciones pendientes de confirmar
+## 4. Contraste con el diccionario oficial (Fase 3)
+
+El portal de datos abiertos de PROFECO publica un diccionario en https://datos.profeco.gob.mx/diccionarioDatosQQP.php
+(consultado el 2026-09-12). Coincide con el esquema observado:
+
+| Diccionario oficial | Tipo oficial | Columna en los CSV | Diferencia |
+|---|---|---|---|
+| PRODUCTO | Carácter (65) | `producto` | Solo nombre: los CSV usan minúsculas y guion bajo. |
+| PRESENTACIÓN | Carácter (180) | `presentacion` | |
+| MARCA | Carácter (65) | `marca` | |
+| CATEGORÍA | Carácter (65) | `categoria` | |
+| CATÁLOGO | Carácter (65) | `catalogo` | El diccionario no enumera los catálogos ni explica `Pacic`. |
+| PRECIO | Número (18,2) | `precio` | Confirma: "precio del producto de venta al público". No indica moneda ni impuestos. |
+| FECHAREGISTRO | Fecha y hora (8) | `fecha_registro` | No documenta el formato de texto; los archivos usan dos (sección 1). |
+| CADENACOMERCIAL | Carácter (65) | `cadena_comercial` | |
+| GIRO | Carácter (65) | `giro` | |
+| NOMBRECOMERCIAL | Carácter (120) | `nombre_comercial` | |
+| DIRECCIÓN | Carácter (255) | `direccion` | |
+| ESTADO | Carácter (120) | `estado` | |
+| MUNICIPIO | Carácter (120) | `municipio` | Define "municipio o demarcación territorial" (incluye alcaldías de CDMX). |
+| LATITUD | Número (18,6) | `latitud` | Confirma grados decimales. |
+| LONGITUD | Número (18,6) | `longitud` | Confirma grados decimales. |
+
+El portal ofrece además un archivo de metadatos que no se descargó en esta fase.
+
+## 5. Interpretaciones pendientes de confirmar
 
 - **`Pacic`**: probablemente el *Paquete Contra la Inflación y la Carestía* (programa federal de precios de
   productos básicos). Sus productos se repiten en `Basicos` y `Frutas y Legumbres`.

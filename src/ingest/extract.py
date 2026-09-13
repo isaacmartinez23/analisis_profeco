@@ -80,13 +80,17 @@ def list_members(archive: Path, out_dir: Path) -> list[Member]:
 
 
 def _rar_tool() -> list[str]:
-    """Devuelve el comando base para extraer RAR con la herramienta disponible."""
-    for exe in ("unrar", "7z", "7zz"):
-        if path := shutil.which(exe):
-            return [path]
+    """Devuelve el comando base para extraer RAR con la herramienta disponible.
+
+    bsdtar va primero: lee RAR4 y RAR5 en Windows (tar.exe del sistema) y en Linux (libarchive-tools),
+    mientras que el paquete 7z de algunas distribuciones no incluye el códec RAR.
+    """
     for exe in ("bsdtar", "tar"):
         path = shutil.which(exe)
         if path and "bsdtar" in subprocess.run([path, "--version"], capture_output=True, text=True).stdout:
+            return [path]
+    for exe in ("unrar", "7zz", "7z"):
+        if path := shutil.which(exe):
             return [path]
     raise RuntimeError(
         "No se encontró herramienta para extraer RAR. Instala una de: "

@@ -6,7 +6,7 @@ Documento vivo: cada limitación indica su efecto en los resultados y, si aplica
 
 | # | Limitación | Efecto | Mitigación |
 |---|---|---|---|
-| L-01 | PROFECO no entregó diccionario de datos ni metadatos. | Las definiciones son inferidas (`docs/diccionario_validado.md` marca qué está verificado y qué no). | Confirmar con documentación oficial: significado de `Pacic`, IVA incluido, moneda. |
+| L-01 | Los archivos recibidos no incluían diccionario. En la Fase 3 se localizó el diccionario oficial en línea: confirma las 15 columnas y define precio como "precio de venta al público", pero no documenta catálogos (`Pacic`), moneda ni impuestos. | Moneda (MXN) e IVA siguen siendo supuestos. | `docs/diccionario_validado.md` secciones 4 y 5. |
 | L-02 | Cobertura geográfica de ciudades muestreadas: 75 municipios en 30 estados, casi siempre la capital; sin Colima ni Nayarit. | Un indicador "estatal" describe la ciudad muestreada, no la entidad. | Etiquetar como ciudad en el dashboard (D-012). |
 | L-03 | Cada tienda se visita ~2 días por quincena y no todos los productos se levantan en cada visita. | La semana aislada es escasa; se usa ventana de 14 días (D-010). | Publicar observaciones y cobertura con cada métrica. |
 | L-04 | Mayo 2026 cambió codificación, formato de fecha y mayúsculas; `05-2026_Q2.csv` perdió letras acentuadas (`?`). | Riesgo de partir series y establecimientos. | Lectura por archivo (D-003), llaves canónicas y correcciones con candidato único; casos sin candidato quedan en revisión. |
@@ -39,4 +39,6 @@ Documento vivo: cada limitación indica su efecto en los resultados y, si aplica
 | # | Limitación | Efecto | Mitigación |
 |---|---|---|---|
 | L-15 | El equipo de desarrollo se apaga por protección térmica con consultas de muchos hilos sostenidas. | Rendimiento acotado a 4 hilos y 8 GB. | Límites configurables (D-004); los mismos valores sirven para GitHub Actions. |
-| L-16 | GitHub Actions no tiene acceso a `data/raw` (no se versiona). | La ejecución semanal requiere descargar los datos de PROFECO o usar la muestra. | Definir fuente de descarga en la Fase 3. |
+| L-16 | Los enlaces oficiales de descarga usan tokens opacos y el servidor no publica fecha de modificación. | Un año nuevo requiere agregar su enlace a `data/fuentes_profeco.csv`; CI descarga ~300 MB cada semana. Si PROFECO cambia un token, la descarga falla (y alerta). | D-032. |
+| L-20 | Los archivos disponibles terminan el 2026-05-29 (106 días antes de la fecha de este análisis). | Los resultados no reflejan junio a septiembre de 2026. | La regla M-08 alerta; la primera ejecución semanal en CI descargará las versiones vigentes. |
+| L-21 | El pipeline con datos completos no se ha ejecutado todavía en GitHub Actions ni la publicación contra Supabase (el repositorio no tiene remoto ni credenciales). | Tiempos y comportamiento en CI son estimaciones basadas en la ejecución local y en PostgreSQL 16 embebido. | Primera ejecución manual (`workflow_dispatch`) al configurar el remoto y los secretos. |

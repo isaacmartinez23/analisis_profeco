@@ -47,6 +47,18 @@ seeds:
     tests:
       - unique_combination: {arguments: {columns: ["version", "articulo_id"]}}
 
+  - name: estados_iso
+    description: >
+      Entidades federativas con su clave ISO 3166-2:MX, usada por los mapas de Looker Studio. `estado_key` es la
+      llave canónica (mayúsculas, sin acentos) con la escritura de PROFECO.
+    config:
+      column_types: {estado_key: varchar, estado_iso: varchar, estado_oficial: varchar}
+    columns:
+      - name: estado_key
+        tests: [unique, not_null]
+      - name: estado_iso
+        tests: [unique, not_null]
+
   - name: cadenas_referencia
     description: Cadenas nacionales de referencia para comparar la canasta (D-011).
     config:
