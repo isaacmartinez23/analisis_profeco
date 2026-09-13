@@ -315,6 +315,23 @@ Ninguno de los incidentes dañó datos: la ingesta es transaccional y los modelo
 | 34769738774 | muestra | Falla en publicación | Mismo host inválido, antes de corregir los secretos. |
 | 34771164262 | muestra (rama del PR #2) | **Éxito** | Publicación `exitosa` en Supabase en 3 s: 13 tablas en `qqp`. `looker_lector` lee `qqp`; `anon` y `authenticated` sin acceso a `qqp` ni `qqp_meta`. Sin alertas del asesor de seguridad. |
 | 34772772277 | completo (rama del PR #3, D-037 y D-038) | Falla en `dbt test` | Inspección, ingesta (160 s), calidad, normalización y `dbt run` (192 s) correctos. 2 de 151 pruebas fallan: catálogos de julio con otra grafía (D-039). No se publicó nada. |
+| 34773616518 | completo (rama del PR #3, con D-039) | **Éxito** | Ver "Primera publicación completa". |
+
+### Primera publicación completa
+
+| Paso | Resultado |
+|---|---|
+| Descarga | 3 archivos oficiales (376.8 MB) en 12 s |
+| Inspección | 62 archivos válidos; aviso de columnas adicionales en `06-2026_Q1/Q2` (80 s con extracción) |
+| Ingesta | 62 archivos en 125 s |
+| Normalización | 898 productos, 6,588 presentaciones, 1,717 correcciones de texto, 97.7% de filas en alcance comparables (11 s) |
+| dbt | 23 modelos en 163 s; 153 pruebas pasan en 10 s |
+| Calidad y validación | Solo M-08 en alerta (44 días desde el último dato, 2026-07-31); validación independiente 24/24 |
+| Publicación | `exitosa` en 12 s: 12 tablas, 317,745 filas; `metadatos` con 62 archivos, modo `completo`, última semana 2026-07-27 |
+| Supabase | Base de 96 MB (esquema `qqp` 91 MB) de 500 MB del plan gratuito; sin esquemas residuales; `dim_geografia` con 75 municipios, los mismos que antes de junio; `looker_lector` lee las 13 tablas; `anon` y `authenticated` sin acceso; asesor de seguridad sin alertas |
+| Continuidad | Ahorro máximo mediano semanal de 30.78 a 45.34 MXN entre 2026-05-11 y 2026-07-27, sin saltos en el cambio de formato de junio ni en el de julio |
+
+La corrida fallida anterior abrió el issue #1 de alerta, que ya puede cerrarse.
 
 ### Cambio de esquema de PROFECO (junio 2026)
 
@@ -341,6 +358,9 @@ Con autorización del responsable se descargó la versión vigente de `QQP_2026.
 | Normalización, dbt y validación con datos reales `05-2026_Q2` a `07-2026_Q2` (3.19 M filas, base temporal) | 23 modelos, 153 pruebas dbt, 24/24 validaciones en 6 municipio-semanas de junio y julio (incluida Coyoacán, que llegó como `Coyoac?n`); 72 municipios, ninguno con `?`; 128–139 celdas completas por semana |
 | `ruff check .` / `ruff format --check .` | Sin errores |
 
-### No verificado todavía
+### Pendientes
 
-- Pipeline completo con junio y julio (en CI; en local se evita por el límite térmico del equipo).
+- `data/mappings/` y `reports/` versionados siguen generados con los datos hasta 2026-05: en CI se regeneran en cada
+  ejecución pero no se versionan. Actualizarlos en local requiere sustituir `data/raw/QQP_2026.zip` por la versión
+  nueva (hoy en `data/interim/descargas/`), decisión del responsable por la regla de inmutabilidad.
+- Revisar los 6 valores con `?` sin candidato único (1,733 filas, fuera de la geografía) en la cola de revisión.
