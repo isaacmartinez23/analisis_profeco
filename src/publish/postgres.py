@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import socket
 import sys
 import time
 import uuid
@@ -114,17 +115,48 @@ class ConfigPostgres:
 
     @classmethod
     def desde_entorno(cls) -> ConfigPostgres:
+        def leer(nombre: str) -> str | None:
+            # Los valores pegados en secretos suelen traer espacios o saltos de línea al final.
+            valor = (os.getenv(nombre) or "").strip()
+            return valor or None
+
         return cls(
-            semanas_detalle=int(os.getenv("QQP_PG_SEMANAS_DETALLE") or 52),
-            host=os.getenv("SUPABASE_DB_HOST") or None,
-            port=os.getenv("SUPABASE_DB_PORT") or None,
-            dbname=os.getenv("SUPABASE_DB_NAME") or None,
-            user=os.getenv("SUPABASE_DB_USER") or None,
-            password=os.getenv("SUPABASE_DB_PASSWORD") or None,
-            sslmode=os.getenv("SUPABASE_DB_SSLMODE") or "require",
-            esquema=os.getenv("QQP_PG_SCHEMA") or "qqp",
-            rol_lectura=os.getenv("QQP_PG_ROL_LECTURA") or None,
+            semanas_detalle=int(leer("QQP_PG_SEMANAS_DETALLE") or 52),
+            host=leer("SUPABASE_DB_HOST"),
+            port=leer("SUPABASE_DB_PORT"),
+            dbname=leer("SUPABASE_DB_NAME"),
+            user=leer("SUPABASE_DB_USER"),
+            password=os.getenv("SUPABASE_DB_PASSWORD") or None,  # la contraseña se usa tal cual
+            sslmode=leer("SUPABASE_DB_SSLMODE") or "require",
+            esquema=leer("QQP_PG_SCHEMA") or "qqp",
+            rol_lectura=leer("QQP_PG_ROL_LECTURA"),
         )
+
+    def problemas_conexion(self) -> list[str]:
+        """Errores comunes de configuración, descritos sin revelar los valores (que son secretos)."""
+        problemas = []
+        host, user, port = self.host or "", self.user or "", self.port or ""
+        if "://" in host or "@" in host:
+            problemas.append(
+                "SUPABASE_DB_HOST parece una cadena de conexión completa: usa solo el host del Session pooler "
+                "(aws-…pooler.supabase.com), sin postgresql://, usuario, contraseña ni base de datos"
+            )
+        elif ":" in host:
+            problemas.append("SUPABASE_DB_HOST incluye el puerto: quítalo y ponlo en SUPABASE_DB_PORT")
+        if re.search(r"\s", host):
+            problemas.append("SUPABASE_DB_HOST contiene espacios")
+        if re.fullmatch(r"db\.[a-z0-9]+\.supabase\.co", host):
+            problemas.append(
+                "SUPABASE_DB_HOST es la conexión directa de Supabase (solo IPv6); GitHub Actions requiere el "
+                "host del Session pooler (Connect → Session pooler)"
+            )
+        if host.endswith("pooler.supabase.com") and "." not in user:
+            problemas.append(
+                "SUPABASE_DB_USER debe llevar el sufijo del proyecto para el pooler: postgres.<ref>"
+            )
+        if port and not port.isdigit():
+            problemas.append("SUPABASE_DB_PORT no es un número")
+        return problemas
 
     def faltantes(self) -> list[str]:
         valores = dict(
@@ -262,8 +294,24 @@ def _copiar_tabla(con, pg, tabla: Tabla, esquema_carga: str) -> int:
     return en_destino
 
 
+def verificar_conexion(cfg: ConfigPostgres) -> None:
+    """Falla con un mensaje accionable antes de intentar conectar (sin mostrar valores secretos)."""
+    if problemas := cfg.problemas_conexion():
+        raise RuntimeError("Configuración de conexión inválida:\n  - " + "\n  - ".join(problemas))
+    if (cfg.host or "").startswith("/"):
+        return  # socket Unix local (PostgreSQL de pruebas): no hay nada que resolver en DNS
+    try:
+        socket.getaddrinfo(cfg.host, int(cfg.port or 5432))
+    except socket.gaierror as exc:
+        raise RuntimeError(
+            "No se pudo resolver SUPABASE_DB_HOST en DNS. Copia de nuevo el host desde Supabase → Connect → "
+            "Session pooler (formato aws-…pooler.supabase.com) y actualiza el secreto."
+        ) from exc
+
+
 def publicar(cfg: ConfigPostgres, db_path: Path = config.DUCKDB_PATH) -> dict[str, int]:
     cfg.validar()
+    verificar_conexion(cfg)
     esquema, carga, anterior = cfg.esquema, f"{cfg.esquema}_carga", f"{cfg.esquema}_anterior"
     id_publicacion = f"p{datetime.now(UTC):%Y%m%dT%H%M%S%f}-{uuid.uuid4().hex[:6]}"
     inicio = time.time()
