@@ -24,13 +24,14 @@ Convenciones comunes a todas las tablas:
 | Llave primaria | No declarada (pueden existir filas idénticas); trazabilidad por `archivo_origen`. |
 | Llaves foráneas | `archivo_origen` → `raw.archivos.archivo`; `id_carga` → `raw.cargas.id_carga` |
 | Fuente | `data/interim/csv/**/*.csv`, extraídos de `data/raw/*.rar|zip` |
-| Reglas de calidad | Ingesta: filas = líneas físicas − 1, encabezado exacto. R-01 a R-10. Pruebas dbt de `not_null` en columnas esenciales y catálogo conocido. |
-| Nulos | Se conservan tal cual; solo `latitud`/`longitud` tienen vacíos en el origen (791 filas). |
+| Reglas de calidad | Ingesta: filas = líneas físicas − 1; las 15 columnas esenciales en orden y solo columnas adicionales revisadas (D-037). R-01 a R-10. Pruebas dbt de `not_null` en columnas esenciales y catálogo conocido. |
+| Nulos | Se conservan tal cual; en las columnas esenciales solo `latitud`/`longitud` tienen vacíos en el origen (791 filas hasta 2026-05). Las columnas adicionales son nulas en los archivos que no las traen. |
 | Supuestos | Todo como `VARCHAR`; ninguna conversión en esta capa. |
 
 Columnas: `producto`, `presentacion`, `marca`, `categoria`, `catalogo`, `precio`, `fecha_registro`,
 `cadena_comercial`, `giro`, `nombre_comercial`, `direccion`, `estado`, `municipio`, `latitud`, `longitud` (todas
-`VARCHAR`), `archivo_origen VARCHAR`, `id_carga VARCHAR`, `cargado_utc TIMESTAMP`.
+`VARCHAR`), `archivo_origen VARCHAR`, `id_carga VARCHAR`, `cargado_utc TIMESTAMP`, y las adicionales no documentadas
+`folio`, `cv_producto`, `cv_marca VARCHAR` (solo 2026-06; no se usan en staging).
 
 ## raw.archivos
 
@@ -39,7 +40,7 @@ Columnas: `producto`, `presentacion`, `marca`, `categoria`, `catalogo`, `precio`
 | Descripción | Registro de cada CSV cargado y su formato físico detectado. |
 | Grano | Un CSV. |
 | Llave primaria | `archivo` |
-| Columnas | `archivo VARCHAR`, `crc32 BIGINT`, `bytes BIGINT`, `codificacion VARCHAR`, `bom BOOLEAN`, `formato_fecha VARCHAR` (`yyyy/mm/dd` o `dd/mm/yyyy`), `lineas_fisicas BIGINT`, `filas BIGINT`, `id_carga VARCHAR`, `cargado_utc TIMESTAMP` |
+| Columnas | `archivo VARCHAR`, `crc32 BIGINT`, `bytes BIGINT`, `codificacion VARCHAR`, `bom BOOLEAN`, `formato_fecha VARCHAR` (`yyyy/mm/dd` o `dd/mm/yyyy`), `lineas_fisicas BIGINT`, `filas BIGINT`, `id_carga VARCHAR`, `cargado_utc TIMESTAMP`, `columnas_adicionales VARCHAR` (lista separada por comas; nula si el archivo solo trae las 15 esenciales) |
 | Reglas | `archivo` único; `formato_fecha` en valores permitidos; un archivo con mismo CRC32 no se recarga. |
 
 ## raw.cargas
@@ -129,8 +130,9 @@ Columnas: `establecimiento_id`, `establecimiento_key`, `nombre_comercial`, `dire
 
 | Campo | Valor |
 |---|---|
-| Grano | Municipio (estado + municipio sin acentos). |
+| Grano | Municipio (estado + municipio sin acentos, después de corregir caracteres perdidos, D-038). |
 | Llave primaria | `geografia_id = md5(estado_key \| municipio_key)` |
+| Reglas de calidad | `unique_combination(estado_key, municipio_key)`; en `int_establecimientos`, ninguna `municipio_key` con `?`. |
 | Columnas | `geografia_id`, `estado_key`, `municipio_key`, `estado`, `estado_iso` (ISO 3166-2:MX, seed `estados_iso`), `municipio` (VARCHAR), `n_establecimientos BIGINT`, `primera_fecha`, `ultima_fecha` (DATE) |
 | Supuestos | Nombre mostrado = escritura más reciente (con acentos desde 2026). Son ciudades muestreadas, no entidades completas. |
 

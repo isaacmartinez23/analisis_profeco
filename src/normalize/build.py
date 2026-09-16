@@ -44,6 +44,9 @@ COLUMNAS_CORRECCION = [
     "cadena_comercial",
     "nombre_comercial",
     "direccion",
+    # 2026-06 perdió acentos también en la geografía (D-038): sin corregir, "Coyoac?n" sería otro municipio.
+    "estado",
+    "municipio",
 ]
 SIN_MARCA = {"S/M", "S/MARCA", "SIN MARCA", "SM"}
 DECISIONES_VALIDAS = {"confirmar", "corregir", "excluir"}
@@ -61,9 +64,11 @@ def _leer_manual(nombre: str, columnas: list[str]) -> pd.DataFrame:
 
 
 def _distintos(con, columna: str) -> pd.DataFrame:
-    catalogos = ", ".join(f"'{c}'" for c in CATALOGOS_ALCANCE)
+    # Por llave: desde 2026-07 PROFECO escribe "Básicos" y "PACIC" (D-039).
+    catalogos = ", ".join(f"'{llave(c)}'" for c in CATALOGOS_ALCANCE)
     return con.execute(
-        f"""SELECT {columna} AS valor, count(*) AS filas, bool_or(catalogo IN ({catalogos})) AS en_alcance,
+        f"""SELECT {columna} AS valor, count(*) AS filas,
+                   bool_or(upper(strip_accents(trim(catalogo))) IN ({catalogos})) AS en_alcance,
                    any_value(producto) AS ejemplo_producto
             FROM raw.qqp_precios WHERE {columna} IS NOT NULL GROUP BY 1"""
     ).df()

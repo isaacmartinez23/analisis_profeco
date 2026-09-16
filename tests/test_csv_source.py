@@ -4,7 +4,7 @@ from pathlib import Path
 import duckdb
 import pytest
 
-from src.ingest.csv_source import read_csv_sql
+from src.ingest.csv_source import EXPECTED_COLUMNS, columnas_adicionales, read_csv_sql
 from src.ingest.sniff import sniff_file
 
 
@@ -32,3 +32,27 @@ def test_rechaza_esquema_inesperado(csv_utf8_bom: Path):
     s = sniff_file(csv_utf8_bom)
     with pytest.raises(ValueError, match="Esquema inesperado"):
         read_csv_sql(csv_utf8_bom, replace(s, header=[*s.header[:-1], "lng"]))
+
+
+def test_lee_columnas_adicionales_conocidas(csv_columnas_adicionales: Path):
+    s = sniff_file(csv_columnas_adicionales)
+    assert columnas_adicionales(s.header, s.path) == ["folio", "cv_producto", "cv_marca"]
+    con = duckdb.connect()
+    fila = con.execute(
+        f"SELECT producto, longitud, folio, cv_producto, cv_marca FROM {read_csv_sql(csv_columnas_adicionales, s)}"
+    ).fetchall()
+    assert fila == [("Jitomate", "-102.292976", "20160", "869", "5")]
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        [*EXPECTED_COLUMNS, "folio", "columna_nueva"],  # adicional no revisada
+        [*EXPECTED_COLUMNS, "folio", "folio"],  # repetida
+        [*EXPECTED_COLUMNS[:-1], "folio", "longitud"],  # esencial fuera de su posición
+        [*EXPECTED_COLUMNS[1:], "folio"],  # falta una esencial
+    ],
+)
+def test_rechaza_columnas_adicionales_no_revisadas_o_esenciales_alteradas(header):
+    with pytest.raises(ValueError, match="Esquema inesperado"):
+        columnas_adicionales(header, "x.csv")

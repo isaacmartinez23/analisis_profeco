@@ -1,7 +1,8 @@
 {#
   Grano: un municipio (estado + municipio normalizados sin acentos).
-  El nombre mostrado es la escritura más reciente (con acentos desde 2026). El nombre del estado se elige a
-  nivel estado para que un municipio sin datos recientes no muestre la grafía antigua.
+  El nombre mostrado es la escritura más reciente (con acentos desde 2026), después de corregir caracteres
+  perdidos. El nombre del estado se elige a nivel estado para que un municipio sin datos recientes no muestre la
+  grafía antigua.
   Representa ciudades muestreadas por PROFECO, no la entidad completa (D-012).
 #}
 with municipios as (
@@ -9,7 +10,7 @@ with municipios as (
         geografia_id,
         any_value(estado_key) as estado_key,
         any_value(municipio_key) as municipio_key,
-        arg_max(municipio, ultima_fecha) as municipio,
+        arg_max(municipio_corregido, ultima_fecha) as municipio,
         count(distinct establecimiento_id) as n_establecimientos,
         min(primera_fecha) as primera_fecha,
         max(ultima_fecha) as ultima_fecha
@@ -18,7 +19,7 @@ with municipios as (
 ),
 
 estados as (
-    select estado_key, arg_max(estado, ultima_fecha) as estado
+    select estado_key, arg_max(estado_corregido, ultima_fecha) as estado
     from {{ ref('int_establecimientos') }}
     group by estado_key
 )

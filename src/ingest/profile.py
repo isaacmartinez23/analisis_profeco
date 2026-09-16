@@ -88,7 +88,9 @@ def load_text_tables(con, sniffs: list[FileSniff]) -> None:
         path = Path(s.path)
         name = archivo_id(path)
         source = read_csv_sql(path, s, rejects_table="reject_errors")
-        filas = con.execute(f"INSERT INTO raw_all SELECT *, {sql_literal(name)} FROM {source}").fetchone()[0]
+        filas = con.execute(
+            f"INSERT INTO raw_all SELECT {', '.join(EXPECTED_COLUMNS)}, {sql_literal(name)} FROM {source}"
+        ).fetchone()[0]
         con.execute(
             f"INSERT INTO rechazos SELECT {sql_literal(name)}, line, column_name, error_type::VARCHAR, "
             "error_message FROM reject_errors"

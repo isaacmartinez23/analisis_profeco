@@ -38,6 +38,38 @@ def test_archivo_modificado_se_reemplaza_sin_duplicar(tmp_path: Path, csv_utf8_b
     assert _conteos(db)[:2] == (1, 1)
 
 
+def test_columnas_adicionales_se_conservan_y_migran_una_base_existente(
+    tmp_path: Path, csv_utf8_bom: Path, csv_columnas_adicionales: Path
+):
+    db = tmp_path / "qqp.duckdb"
+    csv_columnas_adicionales.rename(csv_columnas_adicionales.with_suffix(".pendiente"))
+    load.run(base_dir=tmp_path, db_path=db)
+    with duckdb.connect(str(db)) as con:  # simula una base creada antes de existir las columnas adicionales
+        for c in ("folio", "cv_producto", "cv_marca"):
+            con.execute(f"ALTER TABLE raw.qqp_precios DROP COLUMN {c}")
+        con.execute("ALTER TABLE raw.archivos DROP COLUMN columnas_adicionales")
+    csv_columnas_adicionales.with_suffix(".pendiente").rename(csv_columnas_adicionales)
+
+    estados = [r.estado for r in load.run(base_dir=tmp_path, db_path=db)]
+
+    assert estados == ["omitido", "cargado"]  # 01-2026_Q1 ya estaba; 06-2026_Q1 es nuevo
+    with duckdb.connect(str(db), read_only=True) as con:
+        filas = con.execute(
+            "SELECT archivo_origen, producto, folio, cv_producto, cv_marca, cargado_utc IS NOT NULL "
+            "FROM raw.qqp_precios ORDER BY archivo_origen, producto"
+        ).fetchall()
+        archivos = dict(con.execute("SELECT archivo, columnas_adicionales FROM raw.archivos").fetchall())
+    assert filas == [
+        ("QQP_2026/01-2026_Q1.csv", "A.s.cor", None, None, None, True),
+        ("QQP_2026/01-2026_Q1.csv", "Aceite", None, None, None, True),
+        ("QQP_2026/06-2026_Q1.csv", "Jitomate", "20160", "869", "5", True),
+    ]
+    assert archivos == {
+        "QQP_2026/01-2026_Q1.csv": None,
+        "QQP_2026/06-2026_Q1.csv": "folio,cv_producto,cv_marca",
+    }
+
+
 def test_conteo_inconsistente_revierte_la_carga(tmp_path: Path, csv_utf8_bom: Path):
     db = tmp_path / "qqp.duckdb"
     # Un salto de línea dentro de un campo entrecomillado: 3 líneas físicas de datos, 2 filas CSV.

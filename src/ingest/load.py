@@ -10,6 +10,9 @@ Reglas:
   se revierte: nunca quedan cargas parciales.
 - Todas las columnas se guardan como texto, junto con el archivo de origen, el
   identificador de carga y la hora de carga.
+- Las columnas adicionales conocidas (``folio``, ``cv_producto``, ``cv_marca``,
+  presentes solo en algunos archivos) se guardan por nombre; en los demás archivos
+  quedan nulas. ``raw.archivos.columnas_adicionales`` registra cuáles trajo cada uno.
 
 Uso::
 
@@ -29,7 +32,7 @@ from pathlib import Path
 
 from src import config
 from src.db import connect
-from src.ingest.csv_source import EXPECTED_COLUMNS, read_csv_sql
+from src.ingest.csv_source import COLUMNAS_ADICIONALES, EXPECTED_COLUMNS, columnas_adicionales, read_csv_sql
 from src.ingest.extract import crc32_file
 from src.ingest.sniff import sniff_file
 
@@ -69,6 +72,9 @@ CREATE TABLE IF NOT EXISTS raw.qqp_precios (
     id_carga VARCHAR NOT NULL,
     cargado_utc TIMESTAMP NOT NULL
 );
+-- Agregadas después de la primera versión: ALTER mantiene el mismo orden en bases nuevas y existentes.
+ALTER TABLE raw.archivos ADD COLUMN IF NOT EXISTS columnas_adicionales VARCHAR;
+{"".join(f"ALTER TABLE raw.qqp_precios ADD COLUMN IF NOT EXISTS {c} VARCHAR;" for c in COLUMNAS_ADICIONALES)}
 """
 
 
@@ -120,6 +126,7 @@ def cargar_archivo(con, path: Path, base_dir: Path, crc: int, id_carga: str) -> 
 
     sniff = sniff_file(path)
     formato = _formato_fecha(sniff.date_formats, nombre)
+    adicionales = columnas_adicionales(sniff.header, nombre)
     ahora = datetime.now(UTC).replace(tzinfo=None)
 
     con.execute("BEGIN TRANSACTION")
@@ -129,7 +136,8 @@ def cargar_archivo(con, path: Path, base_dir: Path, crc: int, id_carga: str) -> 
         ).fetchone()[0]
         con.execute("DELETE FROM raw.qqp_precios WHERE archivo_origen = ?", [nombre])
         filas = con.execute(
-            f"INSERT INTO raw.qqp_precios SELECT *, ?, ?, ? FROM {read_csv_sql(path, sniff)}",
+            f"""INSERT INTO raw.qqp_precios BY NAME
+                SELECT *, ? AS archivo_origen, ? AS id_carga, ? AS cargado_utc FROM {read_csv_sql(path, sniff)}""",
             [nombre, id_carga, ahora],
         ).fetchone()[0]
         if filas != sniff.lines - 1:
@@ -138,7 +146,9 @@ def cargar_archivo(con, path: Path, base_dir: Path, crc: int, id_carga: str) -> 
             )
         con.execute("DELETE FROM raw.archivos WHERE archivo = ?", [nombre])
         con.execute(
-            "INSERT INTO raw.archivos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """INSERT INTO raw.archivos (archivo, crc32, bytes, codificacion, bom, formato_fecha, lineas_fisicas,
+                   filas, id_carga, cargado_utc, columnas_adicionales)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             [
                 nombre,
                 crc,
@@ -150,6 +160,7 @@ def cargar_archivo(con, path: Path, base_dir: Path, crc: int, id_carga: str) -> 
                 filas,
                 id_carga,
                 ahora,
+                ",".join(adicionales) or None,
             ],
         )
         con.execute("COMMIT")
