@@ -39,6 +39,40 @@ def test_config_no_expone_password_y_valida_identificadores(monkeypatch):
         postgres.ConfigPostgres(esquema='qqp"; drop schema public; --').validar()
 
 
+@pytest.mark.parametrize(
+    ("host", "user", "fragmento"),
+    [
+        (
+            "postgresql://postgres.abc:clave@aws-1-us-east-1.pooler.supabase.com:5432/postgres",
+            "u.x",
+            "cadena de conexión",
+        ),
+        ("aws-1-us-east-1.pooler.supabase.com:5432", "postgres.abc", "incluye el puerto"),
+        ("db.hztmwqnrfrgqqeltstxy.supabase.co", "postgres", "conexión directa"),
+        ("aws-1-us-east-1.pooler.supabase.com", "postgres", "sufijo del proyecto"),
+    ],
+)
+def test_detecta_errores_de_configuracion_sin_mostrar_valores(host, user, fragmento):
+    cfg = postgres.ConfigPostgres(host=host, port="5432", dbname="postgres", user=user, password="clave")
+    problemas = " ".join(cfg.problemas_conexion())
+    assert fragmento in problemas
+    assert host not in problemas and "clave" not in problemas
+
+
+def test_limpia_espacios_y_saltos_de_linea_de_los_secretos(monkeypatch):
+    monkeypatch.setenv("SUPABASE_DB_HOST", "  aws-1-us-east-1.pooler.supabase.com\n")
+    monkeypatch.setenv("SUPABASE_DB_USER", "postgres.abc\n")
+    cfg = postgres.ConfigPostgres.desde_entorno()
+    assert cfg.host == "aws-1-us-east-1.pooler.supabase.com"
+    assert cfg.problemas_conexion() == []
+
+
+def test_host_inexistente_da_mensaje_accionable():
+    cfg = postgres.ConfigPostgres(host="host-que-no-existe.invalid", port="5432", user="u", password="p")
+    with pytest.raises(RuntimeError, match="Session pooler"):
+        postgres.verificar_conexion(cfg)
+
+
 # --- Integración -------------------------------------------------------------------------------------------
 
 
