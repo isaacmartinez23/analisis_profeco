@@ -360,7 +360,38 @@ Con autorización del responsable se descargó la versión vigente de `QQP_2026.
 
 ### Pendientes
 
-- `data/mappings/` y `reports/` versionados siguen generados con los datos hasta 2026-05: en CI se regeneran en cada
-  ejecución pero no se versionan. Actualizarlos en local requiere sustituir `data/raw/QQP_2026.zip` por la versión
-  nueva (hoy en `data/interim/descargas/`), decisión del responsable por la regla de inmutabilidad.
-- Revisar los 6 valores con `?` sin candidato único (1,733 filas, fuera de la geografía) en la cola de revisión.
+- Revisar los valores con `?` sin candidato único en la cola de revisión (27 al 2026-09-16, ninguno en la geografía).
+
+## 2026-09-16 · Fase 4 — Portafolio
+
+### Datos actualizados en local
+
+El responsable sustituyó `data/raw/QQP_2026.zip` por la versión vigente (misma que descargó CI). El pipeline
+completo corrió en local en **5 min** (inspección 30 s, ingesta 21 s con 4 archivos nuevos y 58 sin cambios,
+calidad 19 s, normalización 5 s, `dbt run` 192 s, `dbt test` 13 s, calidad del modelo 2 s, validación 6 s):
+153 pruebas dbt, validación independiente 24/24, solo M-08 en alerta (47 días desde el último dato).
+`data/mappings/` y `reports/` versionados quedaron regenerados con datos al 2026-07-27.
+
+### Construido
+
+| Entregable | Qué contiene |
+|---|---|
+| `README.md` | Qué resuelve, arquitectura en una imagen, instalación y ejecución desde cero, estructura, índice de documentación, alcance y límites |
+| `docs/arquitectura.md` | Flujo completo, componentes, modelo dimensional, modos de ejecución, rendimiento, compuertas de calidad, publicación atómica y seguridad |
+| `reports/memo_ejecutivo.md` | Respuesta ejecutiva a las cinco preguntas con cifras al 2026-07-27, salvedades y recomendaciones |
+| `docs/caso_estudio.md` | Cómo se construyó: cinco problemas reales, la prueba de fuego del cambio de esquema y qué haría después |
+
+### Resultados con datos al 2026-07-27
+
+- 35.6 M observaciones, 135 semanas, 5,630 municipio-semanas comparables en 51 municipios.
+- Ahorro máximo mediano $48.08 (6.7%); $64.03 (8.8%) donde están las 4 cadenas.
+- Chedraui es la más barata en 70.7% de las celdas; cambiarse desde Wal-mart equivale a $1,665 al año.
+- Cinco frescos explican el 73% de la diferencia total (milanesa, limón, jitomate, cebolla, papa).
+- El índice bajó de 104.0 en abril de 2026 a 96.8 en julio: el nivel más bajo desde mayo de 2024.
+
+### Pendientes
+
+- Capturas del dashboard: requieren construir el tablero en Looker Studio con la especificación ya escrita.
+- `reports/perfil_datos.md` sigue siendo el perfilado de la Fase 0 (58 archivos, hasta 2026-05-29); el esquema y las
+  anomalías de junio y julio están en `docs/diccionario_validado.md` §6. Regenerarlo implica releer 10.6 GB de CSV.
+- Integrar los PR #2 y #3 en `main` para que la ejecución programada deje de fallar (L-21).
