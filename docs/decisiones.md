@@ -427,3 +427,31 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
   el JavaScript y las columnas) y no necesita credenciales. Muestra un corte estático que se actualiza cuando corre
   el pipeline, no datos en vivo. La especificación de Looker Studio sigue vigente para quien prefiera esa
   herramienta: ambas leen las mismas tablas.
+
+## D-041 · Publicación en Supabase bajo demanda; GitHub Pages sirve el dashboard (aprobada)
+
+- **Fecha:** 2026-10-07 · **Fase:** 4 (portafolio)
+- **Contexto:** El 2026-10-05 la ejecución semanal falló solo al publicar: el plan gratuito de Supabase pausó el
+  proyecto por inactividad, siete días después de la publicación anterior (L-22). La documentación de Supabase pide
+  "unas pocas consultas al día durante la semana previa", así que una ejecución semanal queda por debajo del umbral
+  por diseño. Desde D-040 el dashboard ya no lee de la base, pero el despliegue a Pages dependía de que el trabajo
+  completo terminara bien, y ese trabajo incluía la publicación: una base pausada dejaba sin actualizar una página
+  que no la necesita.
+- **Decisión:** Separar la capa que sirve los resultados de la base de datos.
+  1. GitHub Pages es la capa de publicación del dashboard: https://isaacmartinez.space/analisis_profeco/.
+  2. La ejecución semanal solo publica en Supabase si la variable `QQP_PUBLICAR_SUPABASE` es `true` (apagada por
+     omisión). Una ejecución manual sigue publicando con la casilla `publicar`, y `python -m src.cli publish`
+     funciona igual en local.
+  3. El trabajo que despliega Pages depende de que el dashboard se haya generado (salida `dashboard_listo`), no de
+     que el trabajo completo termine bien. El paso que sube el artefacto va después de las pruebas dbt, la calidad
+     del modelo y la validación independiente, así que la compuerta de calidad se conserva.
+- **Alternativas descartadas:** *keepalive* diario desde Actions (sostiene una dependencia que ya no se necesita y
+  depende de que el cron corra; GitHub desactiva los programados tras 60 días sin commits); reanudación automática
+  por la API de administración (obliga a guardar un token personal con acceso a toda la organización); plan Pro
+  (25 USD/mes por una capacidad que el proyecto ya no usa cada semana); mudar a un proveedor que despierte al
+  conectarse (resuelve el síntoma, pero agrega una migración para sostener la misma dependencia).
+- **Consecuencias:** La página pública se actualiza cada lunes aunque Supabase esté pausado, y un fallo en rojo
+  vuelve a significar que algo se rompió de verdad. El publicador conserva su código, sus pruebas de integración
+  contra un PostgreSQL 16 real en cada push y la publicación de prueba del pipeline de la muestra: la capacidad
+  sigue probada, solo deja de ejecutarse en producción cada semana. Para demostrar la ruta de Looker Studio hay que
+  reanudar el proyecto (unos 8 minutos) y lanzar una ejecución manual con la casilla marcada.

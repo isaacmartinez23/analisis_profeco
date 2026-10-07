@@ -4,8 +4,14 @@ Dashboard reproducible sobre las tablas que publica `python -m src.cli publish` 
 Definiciones de métricas: `docs/catalogo_metricas.md`. Salvedades obligatorias: sección 6.
 
 > El repositorio incluye una implementación de esta especificación como dashboard HTML estático, generado por el
-> pipeline y sin credenciales (`python -m src.cli dashboard`, D-040). Ver `docs/dashboard.md`; las diferencias de
-> agregación por tamaño están en su sección 3.
+> pipeline y sin credenciales (`python -m src.cli dashboard`, D-040). Está en vivo en
+> <https://isaacmartinez.space/analisis_profeco/>. Ver `docs/dashboard.md`; las diferencias de agregación por
+> tamaño están en su sección 3.
+>
+> **Antes de construir el tablero de Looker Studio:** desde D-041 la publicación en Supabase es bajo demanda y el
+> plan gratuito pausa los proyectos inactivos. Reanuda el proyecto si hace falta (~8 min) y lanza una ejecución
+> manual del workflow con la casilla `publicar`, o ejecuta `python -m src.cli publish` en local, para que el
+> esquema `qqp` esté al día.
 
 ## 1. Conexión
 
