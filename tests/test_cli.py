@@ -66,4 +66,4 @@ def test_desde_reanuda_en_el_paso_indicado(monkeypatch):
 
     cli.main(["--muestra", "pipeline", "--desde", "validate"])
 
-    assert ejecutados == ["validate", "resultados", "publish", "alertas"]
+    assert ejecutados == ["validate", "resultados", "dashboard", "publish", "alertas"]

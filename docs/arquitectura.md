@@ -31,6 +31,7 @@ flowchart TD
         T --> Q2[quality · marts<br/>M-01 a M-08]
         Q2 --> V[validate<br/>recálculo en Python]
         V --> R[resultados<br/>reportes Markdown]
+        R --> H[dashboard<br/>HTML estático]
     end
     subgraph duck[DuckDB · data/processed/qqp.duckdb]
         RAWS[raw] --> STG[staging] --> INT[intermediate] --> CORE[core · esquema estrella]
@@ -38,9 +39,10 @@ flowchart TD
     end
     ING -.escribe.-> RAWS
     DBT -.construye.-> STG
-    R --> P[publish<br/>intercambio atómico]
+    H --> P[publish<br/>intercambio atómico]
     P --> SB[(Supabase · esquema qqp)]
     SB --> LS[Looker Studio]
+    H -.opcional.-> GP[GitHub Pages]
     Q1 & T & Q2 & V --> A[alertas<br/>resumen, webhook, issue]
 ```
 
@@ -58,8 +60,9 @@ versión anterior en Supabase sigue vigente.
 | Normalización | `src/normalize/` | Llave canónica (mayúsculas, sin acentos), corrección de caracteres perdidos por candidato único (D-038) e interpretación de presentaciones a unidad base (kg, l, pieza). Decisiones manuales versionadas aparte. |
 | Modelado | `transform/` (dbt-duckdb) | staging → intermediate → core (estrella) → marts → bi. |
 | Análisis | `src/analysis/` | Selección de la canasta, recálculo independiente (compuerta) y reportes de resultados. |
+| Dashboard | `src/dashboard/` | Extrae las tablas `bi` y los marts de la versión vigente, valida el contrato y escribe un HTML estático con los datos incrustados (D-040, `docs/dashboard.md`). |
 | Publicación | `src/publish/postgres.py` | Carga a un esquema temporal, verifica conteos y reemplaza el esquema en una sola transacción (D-029). |
-| Automatización | `.github/workflows/pipeline-semanal.yml` | Pruebas en cada push y PR; pipeline completo los lunes y a demanda. |
+| Automatización | `.github/workflows/pipeline-semanal.yml` | Pruebas en cada push y PR; pipeline completo los lunes y a demanda; despliegue opcional del dashboard en GitHub Pages. |
 | Alertas | `src/alertas.py` | Resumen en `$GITHUB_STEP_SUMMARY`, webhook opcional e issue automático ante falla. |
 
 ## 3. Modelo dimensional

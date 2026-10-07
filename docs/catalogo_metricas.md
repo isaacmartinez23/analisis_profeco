@@ -100,6 +100,10 @@ en Looker Studio usar Mediana o Promedio sobre semanas, nunca Suma.
 `ahorro_maximo_mediano_competidores` excluye municipio-semanas donde solo se comparan cadenas del mismo grupo
 empresarial. Consistencia con los marts probada por `assert_bi_consistente_con_marts`.
 
+El dashboard HTML (`docs/dashboard.md` §4) agrega estas tablas sobre el periodo elegido con las mismas reglas: mediana
+o promedio de las semanas para medianas y percentiles, suma para los conteos y cocientes de sumas para las
+frecuencias y la disponibilidad.
+
 ## Cobertura y calidad
 
 | Métrica | Fórmula | Grano | Fuente |

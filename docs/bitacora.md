@@ -395,3 +395,52 @@ calidad 19 s, normalización 5 s, `dbt run` 192 s, `dbt test` 13 s, calidad del 
 - `reports/perfil_datos.md` sigue siendo el perfilado de la Fase 0 (58 archivos, hasta 2026-05-29); el esquema y las
   anomalías de junio y julio están en `docs/diccionario_validado.md` §6. Regenerarlo implica releer 10.6 GB de CSV.
 - Integrar los PR #2 y #3 en `main` para que la ejecución programada deje de fallar (L-21).
+
+## 2026-09-17 · Fase 4 — Dashboard
+
+### Decisión
+
+Construir el tablero en Looker Studio requería la cuenta de Google del responsable y capturar la contraseña de
+`looker_lector` en 13 fuentes, y el resultado no se podía versionar ni probar. El responsable eligió un dashboard
+como código (D-040). La especificación de Looker Studio se conserva.
+
+### Construido
+
+| Entregable | Qué contiene |
+|---|---|
+| `src/dashboard/datos.py` | Extracción columnar de la versión vigente: 10 conjuntos desde las tablas `bi` y los marts, catálogos indexados y validación del contrato |
+| `src/dashboard/plantilla.html` | Seis páginas con gráficas SVG propias, filtros globales, lectura por página, tablas ordenables, salvedades y temas claro y oscuro; sin librerías |
+| `src/dashboard/generar.py` | Paso `dashboard` del CLI (`make dashboard`), entre `resultados` y `publish` |
+| `tests/test_dashboard.py` | 8 pruebas: extracción sobre DuckDB sintética, validación, escape del JSON, contrato entre JavaScript y columnas, orden del pipeline |
+| Workflow | Paso `Dashboard` en el pipeline completo y trabajo opcional `dashboard` hacia GitHub Pages (`QQP_PUBLICAR_DASHBOARD`) |
+| Documentación | `docs/dashboard.md`, D-040, L-24 y L-25, capturas en `docs/img/`, README, arquitectura y catálogo de métricas |
+
+### Hallazgos durante la construcción
+
+- La prueba de contrato detectó que la columna de alcance del índice (0 = todas las cadenas) se validaba contra el
+  catálogo de artículos: habría rechazado un índice válido con más alcances que artículos. Se renombró a `alcance`
+  con su propia validación.
+- Con la muestra (semanas no consecutivas), "últimas 12 semanas" contaba filas y no semanas de calendario, y
+  rotulaba un periodo de cinco meses. Los periodos ahora son de calendario, igual que su periodo anterior.
+- Los pasos de eje de 2.5 se mostraban redondeados a enteros (97.5 como "98"). Solo se usan pasos 1-2-5.
+
+### Evidencia
+
+| Prueba | Resultado |
+|---|---|
+| `pytest -q` | 91 pruebas pasan (8 nuevas) |
+| `ruff check .` / `ruff format --check .` | Sin errores |
+| `dbt debug` (con las variables que define el CLI) | Conexión correcta |
+| `python -m src.cli --muestra pipeline` | Exit 0 en 17 s: 23 modelos, 153 pruebas dbt, dashboard de 0.2 MB, publicación omitida sin credenciales |
+| `python -m src.cli dashboard` con datos completos | 2.0 MB, 135 semanas hasta 2026-07-27, en 1 s |
+| Cruce con SQL independiente | 22 cifras de las seis páginas coinciden (últimas 12 semanas; tabla en `docs/dashboard.md` §5) |
+| Navegador | Sin errores de consola con datos completos y muestra; 375, 1024 y 1440 px; temas claro y oscuro; filtros de periodo, cadena y estado |
+
+No se ejecutó `make pipeline` con datos completos: el cambio no toca ingesta, normalización ni modelos dbt, y el
+paso nuevo se ejecutó por separado sobre la base completa del 2026-09-16.
+
+### Pendientes
+
+- Activar GitHub Pages (origen "GitHub Actions") y la variable `QQP_PUBLICAR_DASHBOARD=true` si se quiere el
+  dashboard público con actualización semanal.
+- Integrar los PR #2 y #3 y este cambio en `main` (L-21).

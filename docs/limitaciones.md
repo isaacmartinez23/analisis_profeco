@@ -44,3 +44,10 @@ Documento vivo: cada limitación indica su efecto en los resultados y, si aplica
 | L-20 | Los datos llegan al 2026-07-31: 47 días de rezago al 2026-09-16. | M-08 (≤ 35 días) queda en alerta mientras PROFECO no publique agosto; los resultados no reflejan agosto ni septiembre. | La ejecución completa en CI descarga la versión vigente cada semana. `data/raw/` no se reemplaza automáticamente (D-032). |
 | L-22 | Plan gratuito de Supabase: límite de 500 MB y pausa de proyectos con poca actividad en 7 días. | En Supabase el detalle precio-producto-municipio cubre solo 52 semanas (D-036); si el proyecto se pausa, el dashboard deja de responder hasta reanudarlo. | Consultas del dashboard generan actividad; un plan de pago elimina ambos límites. |
 | L-21 | La primera ejecución completa en GitHub Actions con publicación en Supabase terminó bien el 2026-09-13 (run 34773616518, ~10 min), pero desde la rama del PR #3. La ejecución programada del 2026-09-14 falló en `inspect` porque `main` todavía no tiene D-037 a D-039. | Mientras los PR #2 y #3 sigan abiertos, cada ejecución semanal falla y abre una alerta; Supabase conserva la publicación del 2026-09-13 (datos al 2026-07-27). | Integrar los PR #2 y #3 en `main`. |
+
+## Dashboard
+
+| # | Limitación | Efecto | Mitigación |
+|---|---|---|---|
+| L-24 | El dashboard HTML (D-040) es un corte estático con los datos incrustados cuando corre el pipeline, no una consulta en vivo. | Muestra los datos de la última ejecución; si el pipeline falla, la versión publicada sigue siendo la anterior. | Se regenera en cada ejecución semanal; el encabezado muestra la fecha de los datos y el pie, el commit y la hora de generación. |
+| L-25 | Para que el archivo pese ≈2 MB, el precio por cadena y artículo es la mediana nacional de cada semana (sin filtro de estado) y la cobertura agrupa las 260 cadenas que no son de referencia en "Otras cadenas". | No se puede ver el precio de un artículo en un estado ni la calidad de una cadena no de referencia en el dashboard. | El detalle completo está en DuckDB y en Supabase (`mart_precio_producto`, `mart_cobertura_datos`); `docs/dashboard.md` §3. |

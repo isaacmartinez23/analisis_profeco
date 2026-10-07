@@ -7,7 +7,7 @@ PYTHON ?= python
 MUESTRA ?=
 CLI = $(PYTHON) -m src.cli $(if $(MUESTRA),--muestra,)
 
-.PHONY: setup inspect ingest quality normalize dbt-run dbt-test quality-marts test publish pipeline sample profile clean
+.PHONY: setup inspect ingest quality normalize dbt-run dbt-test quality-marts dashboard test publish pipeline sample profile clean
 
 setup:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -33,6 +33,9 @@ dbt-test:
 
 quality-marts:
 	$(CLI) quality-marts
+
+dashboard:
+	$(CLI) dashboard
 
 test:
 	$(CLI) test
