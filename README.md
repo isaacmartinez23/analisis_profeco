@@ -133,7 +133,7 @@ data/          raw (inmutable), sample (versionada), mappings, processed (ignora
 | Documento | Para qué |
 |---|---|
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Cómo funciona el pipeline de punta a punta |
-| [`docs/decisiones.md`](docs/decisiones.md) | Registro de decisiones (D-001 a D-040) con contexto y consecuencias |
+| [`docs/decisiones.md`](docs/decisiones.md) | Registro de decisiones (D-001 a D-041) con contexto y consecuencias |
 | [`docs/contrato_datos.md`](docs/contrato_datos.md) | Contrato de cada tabla: grano, llaves, tipos, nulos, supuestos |
 | [`docs/catalogo_metricas.md`](docs/catalogo_metricas.md) | Definición y fórmula de cada métrica, con su trazabilidad |
 | [`docs/reglas_calidad.md`](docs/reglas_calidad.md) | Reglas, umbrales y qué pasa cuando fallan |
@@ -170,5 +170,8 @@ La lista completa está en [`docs/limitaciones.md`](docs/limitaciones.md).
 
 ## Licencia y datos
 
-Los datos son de PROFECO, publicados en [datos abiertos](https://datos.profeco.gob.mx/datos_abiertos/qqp.php);
-este repositorio no los redistribuye: solo versiona una muestra pequeña para pruebas.
+El código está bajo licencia [MIT](LICENSE).
+
+Los datos son de PROFECO, publicados en [datos abiertos](https://datos.profeco.gob.mx/datos_abiertos/qqp.php) y
+sujetos a los términos de la fuente; la licencia MIT no los cubre. Este repositorio no los redistribuye: solo
+versiona una muestra pequeña para pruebas.

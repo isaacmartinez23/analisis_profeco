@@ -496,8 +496,21 @@ Supabase. Con el proyecto pausado, el lunes la página se habría quedado sin ac
 dashboard no usa. La compuerta de calidad se conserva: el artefacto de la página se sube después de las pruebas
 dbt, la calidad del modelo y la validación independiente.
 
+### Pulido para portafolio
+
+Revisión del repositorio con ojos de quien lo evalúa:
+
+- Metadatos de GitHub, que estaban vacíos: descripción, enlace al dashboard y 12 temas.
+- `docs/caso_estudio.md`: cifras actualizadas (91 pruebas, 41 decisiones, 25 limitaciones) y un sexto problema con
+  el dashboard como código y la pausa de la base, que es la parte con más criterio de ingeniería del episodio.
+- `reports/perfil_datos.md`: nota que aclara que es la foto de la Fase 0 (58 archivos, hasta el 2026-05-29) y a
+  dónde ir por las cifras vigentes. Contradecía al README sin decirlo.
+- `LICENSE` (MIT) y la aclaración de que no cubre los datos de PROFECO, que tienen sus propios términos.
+
 ### Pendientes
 
-- Cerrar el issue #1 cuando pase la primera ejecución programada con el workflow nuevo (lunes 2026-10-12).
+- Verificar la primera ejecución programada con el workflow nuevo (lunes 2026-10-12): debe terminar en verde sin
+  tocar Supabase y volver a desplegar la página. El issue #1 ya se cerró con el diagnóstico completo.
 - Revisar el bloqueo de Control de aplicaciones de Windows sobre `.venv\Scripts\python.exe`: impide correr el
   pipeline y las pruebas en local (la CI no está afectada).
+- PROFECO sigue sin publicar agosto: M-08 lleva 66 días en alerta (L-20).
