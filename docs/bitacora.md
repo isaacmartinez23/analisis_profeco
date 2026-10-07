@@ -443,4 +443,33 @@ paso nuevo se ejecutó por separado sobre la base completa del 2026-09-16.
 
 - Activar GitHub Pages (origen "GitHub Actions") y la variable `QQP_PUBLICAR_DASHBOARD=true` si se quiere el
   dashboard público con actualización semanal.
-- Integrar los PR #2 y #3 y este cambio en `main` (L-21).
+- Integrar este cambio en `main`. Los PR #2 y #3 ya se integraron el 2026-09-16 (L-21 resuelta).
+
+## 2026-10-07 · Operación — Pausa de Supabase
+
+La ejecución programada del 2026-10-05 (run 37372455375) falló **solo** en el paso de publicación, después de que
+pasaran la descarga, la ingesta, los 23 modelos, las 153 pruebas dbt, las 18 reglas de calidad y la validación
+independiente (24 de 24):
+
+```text
+psycopg.OperationalError: connection failed: FATAL: (ENOTFOUND) tenant/user not found
+```
+
+El mensaje no menciona la pausa. La causa real: el plan gratuito de Supabase pausó el proyecto por inactividad
+(L-22), siete días después de la publicación del 2026-09-28. La documentación de Supabase pide "unas pocas
+consultas al día durante la semana previa" para evitarlo, de modo que una ejecución semanal queda justo en el
+límite: lo que mantenía vivo el proyecto era el uso manual del panel y de Looker Studio.
+
+| Paso | Resultado |
+|---|---|
+| Reanudación del proyecto | `COMING_UP` → `RESTORING` → `ACTIVE_HEALTHY` en ~8 min, con los datos intactos |
+| Verificación tras reanudar | 13 tablas en `qqp`, rol `looker_lector` presente, historial de `qqp_meta.publicaciones` completo |
+| Relanzamiento (run 37562470584) | Éxito en 11 min 40 s: los dos trabajos en verde |
+| Publicación | `exitosa` a las 02:44 UTC: 12 tablas, 317,745 filas, datos al 2026-07-31 (iguales a las del 2026-09-21 y 2026-09-28: PROFECO no ha publicado agosto) |
+
+El intercambio atómico cumplió su promesa: mientras el proyecto estuvo pausado, la publicación del 2026-09-28
+siguió siendo la vigente y no quedó nada a medias.
+
+**Decisión pendiente.** Opciones evaluadas: *keepalive* diario desde Actions, reanudación automática por la API de
+administración (agrega un token personal a los secretos), plan Pro (25 USD/mes), mudar a un proveedor que despierte
+al conectarse, o dejar la publicación bajo demanda, ya que desde D-040 el dashboard no depende de la base.
