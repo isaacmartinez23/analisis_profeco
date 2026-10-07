@@ -28,7 +28,7 @@ perfilado encontró, entre otras cosas:
 Cada hallazgo quedó registrado con su tratamiento en [`diccionario_validado.md`](diccionario_validado.md), antes de
 escribir una sola transformación.
 
-## Cinco problemas y cómo se resolvieron
+## Seis problemas y cómo se resolvieron
 
 ### 1. El equipo se apagaba
 
@@ -73,6 +73,34 @@ Después llegó un límite práctico: el plan gratuito de Supabase pone la base 
 la publicación completa medía 213 MB con picos de 425 MB durante el intercambio. Se publican agregados y el detalle
 más reciente en lugar del histórico completo: 91 MB con las mismas vistas disponibles (D-036).
 
+### 6. El dashboard no se podía construir desde el repositorio, y la base se durmió
+
+El tablero estaba especificado para Looker Studio, pero esa especificación no se podía ejecutar ni probar: no hay
+API para crear gráficas, cada una de las 13 fuentes pide la contraseña del rol de lectura, y el resultado vive en
+una cuenta personal, sin control de versiones. Se construyó entonces un **dashboard como código**: un HTML que
+genera el propio pipeline con los datos incrustados, sin servidor ni credenciales, con las mismas seis vistas y las
+mismas agregaciones (D-040). Dos pruebas nuevas lo sostienen: una valida el contrato de los datos extraídos y otra
+comprueba que cada columna que lee el JavaScript exista en los conjuntos que produce Python. Esa segunda prueba
+encontró, antes de publicar, que el alcance del índice se validaba contra el catálogo de artículos.
+
+Semanas después, la ejecución del lunes falló con un mensaje que no decía la causa:
+
+```text
+psycopg.OperationalError: connection failed: FATAL: (ENOTFOUND) tenant/user not found
+```
+
+No era un problema de credenciales: el plan gratuito de Supabase había pausado el proyecto por inactividad, siete
+días después de la publicación anterior. Su documentación pide "unas pocas consultas al día durante la semana
+previa", así que **una ejecución semanal queda bajo el umbral por diseño**: lo que mantenía viva la base era el uso
+manual del panel.
+
+Lo interesante no fue reanudarla, sino lo que el incidente dejó ver: el despliegue de la página pública dependía de
+que la publicación en la base terminara bien, cuando el dashboard ya no leía de ella. Se quitó la dependencia en
+lugar de sostenerla con un *keepalive* o pagando un plan: GitHub Pages sirve el dashboard, la publicación quedó
+bajo demanda, y el despliegue depende de que el dashboard se haya generado, no de que la base responda (D-041). El
+publicador conserva su código y sus pruebas contra un PostgreSQL real en cada push: lo que dejó de ocurrir es su
+ejecución semanal, no la capacidad.
+
 ## La prueba de fuego: el origen cambió
 
 Tres días después de automatizar el pipeline, PROFECO publicó junio y julio de 2026. Las tres ejecuciones
@@ -98,9 +126,11 @@ geografía contenga `?`.
 
 - Un pipeline que corre completo con un comando y procesa 36 millones de filas en unos 10 minutos en GitHub
   Actions, incluida la descarga.
-- 83 pruebas de Python, 153 de dbt y una validación independiente que recalcula el resultado desde cero.
-- Publicación atómica a Supabase y ejecución semanal en GitHub Actions con alertas.
-- 39 decisiones y 23 limitaciones documentadas, cada una con su efecto en los resultados.
+- 91 pruebas de Python, 153 de dbt y una validación independiente que recalcula el resultado desde cero.
+- Un dashboard de seis páginas que genera el propio pipeline y se publica cada lunes en
+  <https://isaacmartinez.space/analisis_profeco/>, sin servidor ni credenciales.
+- Publicación atómica a PostgreSQL —bajo demanda— y ejecución semanal en GitHub Actions con alertas.
+- 41 decisiones y 25 limitaciones documentadas, cada una con su efecto en los resultados.
 
 ## Qué haría después
 

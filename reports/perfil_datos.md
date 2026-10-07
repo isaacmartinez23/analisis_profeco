@@ -3,6 +3,12 @@
 _Generado automáticamente por `python -m src.ingest.profile` el 2026-09-12 17:39._
 _No editar a mano: las interpretaciones viven en `docs/diccionario_validado.md` y `docs/bitacora.md`._
 
+> **Este perfil es la foto de la Fase 0**, con los 58 archivos disponibles entonces (datos hasta el 2026-05-29).
+> Después PROFECO publicó junio y julio de 2026: hoy son 62 archivos y 35.6 millones de observaciones hasta el
+> 2026-07-31. El esquema y las anomalías de esos meses están en `docs/diccionario_validado.md` §6, y las cifras
+> vigentes, en `reports/resultados_canasta.md` y en el dashboard. No se regenera en cada ejecución porque implica
+> releer 10.6 GB de CSV; se actualiza a propósito con `python -m src.cli profile`.
+
 ## Resumen
 
 - Archivos originales: **3** comprimidos → **58** CSV (10.57 GB sin comprimir)
