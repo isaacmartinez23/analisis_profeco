@@ -395,3 +395,81 @@ calidad 19 s, normalización 5 s, `dbt run` 192 s, `dbt test` 13 s, calidad del 
 - `reports/perfil_datos.md` sigue siendo el perfilado de la Fase 0 (58 archivos, hasta 2026-05-29); el esquema y las
   anomalías de junio y julio están en `docs/diccionario_validado.md` §6. Regenerarlo implica releer 10.6 GB de CSV.
 - Integrar los PR #2 y #3 en `main` para que la ejecución programada deje de fallar (L-21).
+
+## 2026-09-17 · Fase 4 — Dashboard
+
+### Decisión
+
+Construir el tablero en Looker Studio requería la cuenta de Google del responsable y capturar la contraseña de
+`looker_lector` en 13 fuentes, y el resultado no se podía versionar ni probar. El responsable eligió un dashboard
+como código (D-040). La especificación de Looker Studio se conserva.
+
+### Construido
+
+| Entregable | Qué contiene |
+|---|---|
+| `src/dashboard/datos.py` | Extracción columnar de la versión vigente: 10 conjuntos desde las tablas `bi` y los marts, catálogos indexados y validación del contrato |
+| `src/dashboard/plantilla.html` | Seis páginas con gráficas SVG propias, filtros globales, lectura por página, tablas ordenables, salvedades y temas claro y oscuro; sin librerías |
+| `src/dashboard/generar.py` | Paso `dashboard` del CLI (`make dashboard`), entre `resultados` y `publish` |
+| `tests/test_dashboard.py` | 8 pruebas: extracción sobre DuckDB sintética, validación, escape del JSON, contrato entre JavaScript y columnas, orden del pipeline |
+| Workflow | Paso `Dashboard` en el pipeline completo y trabajo opcional `dashboard` hacia GitHub Pages (`QQP_PUBLICAR_DASHBOARD`) |
+| Documentación | `docs/dashboard.md`, D-040, L-24 y L-25, capturas en `docs/img/`, README, arquitectura y catálogo de métricas |
+
+### Hallazgos durante la construcción
+
+- La prueba de contrato detectó que la columna de alcance del índice (0 = todas las cadenas) se validaba contra el
+  catálogo de artículos: habría rechazado un índice válido con más alcances que artículos. Se renombró a `alcance`
+  con su propia validación.
+- Con la muestra (semanas no consecutivas), "últimas 12 semanas" contaba filas y no semanas de calendario, y
+  rotulaba un periodo de cinco meses. Los periodos ahora son de calendario, igual que su periodo anterior.
+- Los pasos de eje de 2.5 se mostraban redondeados a enteros (97.5 como "98"). Solo se usan pasos 1-2-5.
+
+### Evidencia
+
+| Prueba | Resultado |
+|---|---|
+| `pytest -q` | 91 pruebas pasan (8 nuevas) |
+| `ruff check .` / `ruff format --check .` | Sin errores |
+| `dbt debug` (con las variables que define el CLI) | Conexión correcta |
+| `python -m src.cli --muestra pipeline` | Exit 0 en 17 s: 23 modelos, 153 pruebas dbt, dashboard de 0.2 MB, publicación omitida sin credenciales |
+| `python -m src.cli dashboard` con datos completos | 2.0 MB, 135 semanas hasta 2026-07-27, en 1 s |
+| Cruce con SQL independiente | 22 cifras de las seis páginas coinciden (últimas 12 semanas; tabla en `docs/dashboard.md` §5) |
+| Navegador | Sin errores de consola con datos completos y muestra; 375, 1024 y 1440 px; temas claro y oscuro; filtros de periodo, cadena y estado |
+
+No se ejecutó `make pipeline` con datos completos: el cambio no toca ingesta, normalización ni modelos dbt, y el
+paso nuevo se ejecutó por separado sobre la base completa del 2026-09-16.
+
+### Pendientes
+
+- Activar GitHub Pages (origen "GitHub Actions") y la variable `QQP_PUBLICAR_DASHBOARD=true` si se quiere el
+  dashboard público con actualización semanal.
+- Integrar este cambio en `main`. Los PR #2 y #3 ya se integraron el 2026-09-16 (L-21 resuelta).
+
+## 2026-10-07 · Operación — Pausa de Supabase
+
+La ejecución programada del 2026-10-05 (run 37372455375) falló **solo** en el paso de publicación, después de que
+pasaran la descarga, la ingesta, los 23 modelos, las 153 pruebas dbt, las 18 reglas de calidad y la validación
+independiente (24 de 24):
+
+```text
+psycopg.OperationalError: connection failed: FATAL: (ENOTFOUND) tenant/user not found
+```
+
+El mensaje no menciona la pausa. La causa real: el plan gratuito de Supabase pausó el proyecto por inactividad
+(L-22), siete días después de la publicación del 2026-09-28. La documentación de Supabase pide "unas pocas
+consultas al día durante la semana previa" para evitarlo, de modo que una ejecución semanal queda justo en el
+límite: lo que mantenía vivo el proyecto era el uso manual del panel y de Looker Studio.
+
+| Paso | Resultado |
+|---|---|
+| Reanudación del proyecto | `COMING_UP` → `RESTORING` → `ACTIVE_HEALTHY` en ~8 min, con los datos intactos |
+| Verificación tras reanudar | 13 tablas en `qqp`, rol `looker_lector` presente, historial de `qqp_meta.publicaciones` completo |
+| Relanzamiento (run 37562470584) | Éxito en 11 min 40 s: los dos trabajos en verde |
+| Publicación | `exitosa` a las 02:44 UTC: 12 tablas, 317,745 filas, datos al 2026-07-31 (iguales a las del 2026-09-21 y 2026-09-28: PROFECO no ha publicado agosto) |
+
+El intercambio atómico cumplió su promesa: mientras el proyecto estuvo pausado, la publicación del 2026-09-28
+siguió siendo la vigente y no quedó nada a medias.
+
+**Decisión pendiente.** Opciones evaluadas: *keepalive* diario desde Actions, reanudación automática por la API de
+administración (agrega un token personal a los secretos), plan Pro (25 USD/mes), mudar a un proveedor que despierte
+al conectarse, o dejar la publicación bajo demanda, ya que desde D-040 el dashboard no depende de la base.

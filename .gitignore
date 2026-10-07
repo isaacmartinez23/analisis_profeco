@@ -18,6 +18,8 @@ data/processed/*.duckdb.wal
 data/processed/*.parquet
 data/processed/muestra/
 reports/.calidad_*.parquet
+# Dashboard HTML generado (≈2 MB, cambia cada semana): se publica, no se versiona
+reports/dashboard/
 
 # dbt
 transform/target/

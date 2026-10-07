@@ -8,6 +8,8 @@
 # Secretos requeridos para publicar (Settings → Secrets and variables → Actions):
 #   SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_NAME, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD
 # Opcionales: secreto ALERTA_WEBHOOK_URL; variables QQP_PG_ROL_LECTURA y QQP_PG_SEMANAS_DETALLE.
+# Dashboard en GitHub Pages (opcional): variable QQP_PUBLICAR_DASHBOARD=true y Pages con origen "GitHub Actions"
+# (Settings → Pages). Solo se despliega tras una ejecución completa sin fallas.
 
 name: Pipeline semanal PROFECO QQP
 
@@ -173,6 +175,15 @@ jobs:
       - name: Resultados
         run: python -m src.cli $MODO_FLAG resultados
 
+      - name: Dashboard
+        run: python -m src.cli $MODO_FLAG dashboard
+
+      - name: Preparar dashboard para GitHub Pages
+        if: env.MODO_FLAG == '' && vars.QQP_PUBLICAR_DASHBOARD == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: reports/dashboard/
+
       - name: Publicación en Supabase
         if: env.PUBLICAR == 'true'
         env:
@@ -226,3 +237,23 @@ jobs:
                 owner, repo, title: 'Falla del pipeline semanal PROFECO QQP', body: cuerpo, labels: ['alerta-pipeline'],
               });
             }
+
+  dashboard:
+    name: Dashboard en GitHub Pages
+    needs: pipeline
+    # El trabajo `pipeline` solo termina bien si todas las pruebas y validaciones pasaron.
+    if: >-
+      vars.QQP_PUBLICAR_DASHBOARD == 'true' &&
+      (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.modo == 'completo'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Desplegar
+        id: despliegue
+        uses: actions/deploy-pages@v5

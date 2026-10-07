@@ -5,11 +5,12 @@ Uso::
     python -m src.cli pipeline            # datos completos
     python -m src.cli --muestra pipeline  # muestra versionada en data/sample (no requiere data/raw)
     python -m src.cli <paso>              # setup | download | inspect | ingest | quality | normalize | dbt-run |
-                                          # dbt-test | quality-marts | validate | resultados | publish | alertas |
+                                          # dbt-test | quality-marts | validate | resultados | dashboard | publish |
+                                          # alertas |
                                           # sample | profile | seleccion-canasta | test | clean
 
 Orden de `pipeline`: inspect → ingest → quality → normalize → dbt-run → dbt-test → quality-marts → validate →
-resultados → publish → alertas. `download` (datos oficiales de PROFECO) se usa en CI; en local los archivos se
+resultados → dashboard → publish → alertas. `download` (datos oficiales de PROFECO) se usa en CI; en local los archivos se
 colocan a mano en data/raw. Cualquier fallo detiene la ejecución con código distinto de cero y dispara una alerta;
 la publicación solo ocurre si todo lo anterior pasó y hay credenciales configuradas.
 """
@@ -161,6 +162,12 @@ def paso_resultados() -> None:
     resultados.run()
 
 
+def paso_dashboard() -> None:
+    from src.dashboard import generar
+
+    generar.run()
+
+
 def paso_publish() -> None:
     from src.publish import postgres
 
@@ -226,6 +233,7 @@ PASOS: dict[str, Callable[[], None]] = {
     "validate": paso_validate,
     "resultados": paso_resultados,
     "seleccion-canasta": paso_seleccion_canasta,
+    "dashboard": paso_dashboard,
     "publish": paso_publish,
     "alertas": paso_alertas,
     "sample": paso_sample,
@@ -245,6 +253,7 @@ PIPELINE = [
     "quality-marts",
     "validate",
     "resultados",
+    "dashboard",
     "publish",
     "alertas",
 ]

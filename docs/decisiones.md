@@ -404,3 +404,26 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
 - **Decisión:** Mediana y MAD por producto con `median` exacto.
 - **Consecuencias:** Dos ejecuciones consecutivas produjeron exactamente los mismos atípicos (11,862) y la misma
   completitud (50.7494%). La tabla de hechos tardó 61 s, menos que con la versión aproximada (70 s).
+
+## D-040 · Dashboard como código además de Looker Studio (aprobada)
+
+- **Fecha:** 2026-09-17 · **Fase:** 4 (portafolio)
+- **Contexto:** La especificación de Looker Studio (`docs/dashboard_looker_studio.md`) no se podía construir ni
+  verificar desde el repositorio. Looker Studio no tiene API para crear gráficas, cada fuente PostgreSQL pide la
+  contraseña del rol de lectura y el tablero queda en una cuenta personal de Google, sin control de versiones ni
+  pruebas. El responsable eligió un dashboard como código.
+- **Decisión:** Nuevo paso `dashboard` (`src/dashboard/`) entre `resultados` y `publish`. Lee las mismas tablas
+  que se publican en Supabase desde DuckDB y escribe `reports/dashboard/index.html`: un solo archivo con los datos
+  incrustados como JSON columnar (≈2 MB), gráficas SVG propias y ninguna librería externa. Solo usa Google Fonts,
+  con fuentes de respaldo del sistema. Replica las seis páginas, los controles globales, los campos calculados y
+  las salvedades de la especificación, con las mismas agregaciones (mediana o promedio sobre semanas, nunca suma
+  de medianas). Tres agregaciones propias por tamaño (`docs/dashboard.md` §3). Publicación opcional en GitHub Pages
+  desde el workflow semanal, activada con la variable `QQP_PUBLICAR_DASHBOARD=true`.
+- **Alternativas descartadas:** Streamlit o Dash (requieren un servidor encendido y no caben en un hosting
+  estático); Chart.js o ECharts (dependencia de CDN y estilos difíciles de igualar a la paleta validada);
+  consultar Supabase desde el navegador (expondría una llave y dependería de que el proyecto gratuito no esté
+  pausado, L-22).
+- **Consecuencias:** El dashboard se reproduce con un comando, se prueba en CI (contrato de datos y contrato entre
+  el JavaScript y las columnas) y no necesita credenciales. Muestra un corte estático que se actualiza cuando corre
+  el pipeline, no datos en vivo. La especificación de Looker Studio sigue vigente para quien prefiera esa
+  herramienta: ambas leen las mismas tablas.

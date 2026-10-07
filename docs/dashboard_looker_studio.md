@@ -3,6 +3,10 @@
 Dashboard reproducible sobre las tablas que publica `python -m src.cli publish` en Supabase (esquema `qqp`).
 Definiciones de métricas: `docs/catalogo_metricas.md`. Salvedades obligatorias: sección 6.
 
+> El repositorio incluye una implementación de esta especificación como dashboard HTML estático, generado por el
+> pipeline y sin credenciales (`python -m src.cli dashboard`, D-040). Ver `docs/dashboard.md`; las diferencias de
+> agregación por tamaño están en su sección 3.
+
 ## 1. Conexión
 
 ### 1.1 Rol de solo lectura (una vez, en el SQL Editor de Supabase)

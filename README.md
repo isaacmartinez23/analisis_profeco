@@ -4,10 +4,11 @@ Pipeline de datos que toma los archivos abiertos de **Quién es Quién en los Pr
 productos y presentaciones, modela un esquema estrella, calcula el costo semanal de una canasta de 16 alimentos y
 publica tablas analíticas listas para un dashboard.
 
-De 36 millones de precios crudos a cuatro marts que responden cinco preguntas, con pruebas en cada paso y una
-ejecución semanal automatizada.
+De 36 millones de precios crudos a cuatro marts que responden cinco preguntas, con pruebas en cada paso, una
+ejecución semanal automatizada y un dashboard que se genera con el pipeline.
 
-**Stack:** Python 3.12 · DuckDB · dbt · PostgreSQL (Supabase) · GitHub Actions · Looker Studio · pytest · ruff
+**Stack:** Python 3.12 · DuckDB · dbt · PostgreSQL (Supabase) · GitHub Actions · HTML/SVG · Looker Studio · pytest ·
+ruff
 
 ## Preguntas que responde
 
@@ -20,6 +21,21 @@ ejecución semanal automatizada.
 Las respuestas, con sus salvedades, están en [`reports/memo_ejecutivo.md`](reports/memo_ejecutivo.md) (versión
 ejecutiva) y [`reports/resultados_canasta.md`](reports/resultados_canasta.md) (versión con todas las tablas).
 
+## Dashboard
+
+![Resumen del dashboard con datos al 2026-07-27](docs/img/dashboard_resumen.png)
+
+Seis páginas, una por vista de la especificación: resumen, costo por cadena, ahorro, productos, cobertura y
+disponibilidad. Tiene filtros de periodo, cadena, grupo empresarial y estado, y cada cifra es trazable a una tabla
+publicada. Es un solo HTML sin servidor ni credenciales que genera el pipeline:
+
+```bash
+python -m src.cli dashboard   # reports/dashboard/index.html
+```
+
+Detalle, agregaciones y verificación en [`docs/dashboard.md`](docs/dashboard.md). La especificación para Looker
+Studio sobre Supabase sigue disponible en [`docs/dashboard_looker_studio.md`](docs/dashboard_looker_studio.md).
+
 ## Arquitectura
 
 ```mermaid
@@ -30,8 +46,10 @@ flowchart LR
     Q --> N[normalización<br/>unidades y texto]
     N --> M[dbt · esquema estrella<br/>marts y vistas BI]
     M --> V[pruebas dbt y<br/>validación independiente]
-    V --> S[(Supabase<br/>publicación atómica)]
+    V --> H[dashboard<br/>HTML estático]
+    H --> S[(Supabase<br/>publicación atómica)]
     S --> L[Looker Studio]
+    H -.opcional.-> G[GitHub Pages]
     V -.falla.-> A[alerta e issue<br/>no se publica]
 ```
 
@@ -63,7 +81,7 @@ python -m src.cli pipeline
 
 `make pipeline` y `make pipeline MUESTRA=1` hacen lo mismo donde hay `make`. Cada paso se puede ejecutar por
 separado: `inspect`, `ingest`, `quality`, `normalize`, `dbt-run`, `dbt-test`, `quality-marts`, `validate`,
-`resultados`, `publish`, `alertas`. `pipeline --desde <paso>` reanuda desde un paso.
+`resultados`, `dashboard`, `publish`, `alertas`. `pipeline --desde <paso>` reanuda desde un paso.
 
 Sin credenciales de Supabase configuradas, el pipeline termina correctamente después de validar los marts y avisa
 que no publicará.
@@ -77,7 +95,7 @@ secretos del repositorio. La guía de conexión, el rol de solo lectura y la esp
 ### Pruebas
 
 ```bash
-pytest -q          # 83 pruebas, incluidas las de integración contra PostgreSQL real
+pytest -q          # 91 pruebas, incluidas las de integración contra PostgreSQL real
 ruff check .
 python -m src.cli --muestra pipeline
 ```
@@ -88,11 +106,11 @@ Las pruebas de integración del publicador usan el PostgreSQL de `QQP_TEST_PG_DS
 ## Qué hay en el repositorio
 
 ```text
-src/           ingesta, calidad, normalización, análisis y publicación
+src/           ingesta, calidad, normalización, análisis, dashboard y publicación
 transform/     proyecto dbt: staging → intermediate → core → marts → bi
 tests/         pruebas unitarias y de integración
 docs/          arquitectura, decisiones, contratos, reglas, limitaciones, bitácora
-reports/       perfil de datos, calidad, resultados, memo ejecutivo
+reports/       perfil de datos, calidad, resultados, memo ejecutivo (y el dashboard generado, no versionado)
 data/          raw (inmutable), sample (versionada), mappings, processed (ignorado)
 .github/       ejecución semanal y pruebas en cada push
 ```
@@ -102,14 +120,15 @@ data/          raw (inmutable), sample (versionada), mappings, processed (ignora
 | Documento | Para qué |
 |---|---|
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Cómo funciona el pipeline de punta a punta |
-| [`docs/decisiones.md`](docs/decisiones.md) | Registro de decisiones (D-001 a D-039) con contexto y consecuencias |
+| [`docs/decisiones.md`](docs/decisiones.md) | Registro de decisiones (D-001 a D-040) con contexto y consecuencias |
 | [`docs/contrato_datos.md`](docs/contrato_datos.md) | Contrato de cada tabla: grano, llaves, tipos, nulos, supuestos |
 | [`docs/catalogo_metricas.md`](docs/catalogo_metricas.md) | Definición y fórmula de cada métrica, con su trazabilidad |
 | [`docs/reglas_calidad.md`](docs/reglas_calidad.md) | Reglas, umbrales y qué pasa cuando fallan |
 | [`docs/diccionario_validado.md`](docs/diccionario_validado.md) | Esquema real de los CSV, contrastado con el diccionario oficial |
 | [`docs/normalizacion.md`](docs/normalizacion.md) | Llaves canónicas, caracteres perdidos y unidades base |
-| [`docs/limitaciones.md`](docs/limitaciones.md) | Supuestos y limitaciones (L-01 a L-23) |
-| [`docs/dashboard_looker_studio.md`](docs/dashboard_looker_studio.md) | Conexión, fuentes, páginas y campos calculados |
+| [`docs/limitaciones.md`](docs/limitaciones.md) | Supuestos y limitaciones (L-01 a L-25) |
+| [`docs/dashboard.md`](docs/dashboard.md) | Dashboard HTML: páginas, datos incrustados, agregaciones y verificación |
+| [`docs/dashboard_looker_studio.md`](docs/dashboard_looker_studio.md) | Especificación para Looker Studio: conexión, fuentes, páginas y campos calculados |
 | [`docs/caso_estudio.md`](docs/caso_estudio.md) | Cómo se construyó: problemas reales y decisiones de ingeniería |
 | [`docs/bitacora.md`](docs/bitacora.md) | Bitácora por fase, con evidencia de pruebas |
 
@@ -122,6 +141,8 @@ El workflow [`pipeline-semanal.yml`](.github/workflows/pipeline-semanal.yml) tie
 - **Pipeline completo** los lunes a las 13:00 UTC y a demanda: descarga los archivos vigentes, ejecuta cada paso por
   separado y publica en Supabase solo si todo pasó. Ante cualquier falla escribe un resumen, opcionalmente notifica
   a un webhook y abre o actualiza un issue de alerta.
+- **Dashboard en GitHub Pages** (opcional, con la variable `QQP_PUBLICAR_DASHBOARD=true`): se despliega solo
+  después de una ejecución completa sin fallas.
 
 ## Alcance y límites
 
