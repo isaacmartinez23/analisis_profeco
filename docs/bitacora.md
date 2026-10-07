@@ -470,6 +470,34 @@ límite: lo que mantenía vivo el proyecto era el uso manual del panel y de Look
 El intercambio atómico cumplió su promesa: mientras el proyecto estuvo pausado, la publicación del 2026-09-28
 siguió siendo la vigente y no quedó nada a medias.
 
-**Decisión pendiente.** Opciones evaluadas: *keepalive* diario desde Actions, reanudación automática por la API de
+**Decisión: D-041.** Opciones evaluadas: *keepalive* diario desde Actions, reanudación automática por la API de
 administración (agrega un token personal a los secretos), plan Pro (25 USD/mes), mudar a un proveedor que despierte
-al conectarse, o dejar la publicación bajo demanda, ya que desde D-040 el dashboard no depende de la base.
+al conectarse, o dejar la publicación bajo demanda. Se eligió la última: desde D-040 el dashboard no depende de la
+base, así que se quitó la dependencia en lugar de sostenerla.
+
+## 2026-10-07 · Fase 4 — Dashboard público y publicación bajo demanda
+
+### Construido
+
+| Paso | Resultado |
+|---|---|
+| Dashboard en `main` | PR #4 fusionado (merge `622967d`) tras pasar la CI: lint, 91 pruebas y el pipeline de la muestra en 1 min 24 s |
+| GitHub Pages | Activado con origen "GitHub Actions"; variable `QQP_PUBLICAR_DASHBOARD=true`; HTTPS forzado |
+| Primera publicación de la página | Run 37565792463: los tres trabajos en verde; la página responde 200 en 3 s (1.96 MB) y `http` redirige a `https` |
+| Verificación en el navegador | Sin errores de consola; ahorro máximo mediano $37.52, datos al 2026-07-31; el pie confirma commit `622967d` y ejecución 37565792463 |
+| Desacople (D-041) | La publicación semanal en Supabase queda detrás de `QQP_PUBLICAR_SUPABASE` (apagada); el trabajo de Pages depende de la salida `dashboard_listo`, no de que el trabajo completo termine bien |
+
+**En vivo:** <https://isaacmartinez.space/analisis_profeco/>. El dominio es el de la cuenta, no `github.io`.
+
+### Por qué el desacople
+
+El despliegue de Pages dependía de que el trabajo completo terminara bien, y ese trabajo incluía la publicación en
+Supabase. Con el proyecto pausado, el lunes la página se habría quedado sin actualizar por una dependencia que el
+dashboard no usa. La compuerta de calidad se conserva: el artefacto de la página se sube después de las pruebas
+dbt, la calidad del modelo y la validación independiente.
+
+### Pendientes
+
+- Cerrar el issue #1 cuando pase la primera ejecución programada con el workflow nuevo (lunes 2026-10-12).
+- Revisar el bloqueo de Control de aplicaciones de Windows sobre `.venv\Scripts\python.exe`: impide correr el
+  pipeline y las pruebas en local (la CI no está afectada).

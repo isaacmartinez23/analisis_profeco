@@ -39,10 +39,10 @@ flowchart TD
     end
     ING -.escribe.-> RAWS
     DBT -.construye.-> STG
-    H --> P[publish<br/>intercambio atómico]
+    H --> GP[GitHub Pages · página pública]
+    H -.bajo demanda.-> P[publish<br/>intercambio atómico]
     P --> SB[(Supabase · esquema qqp)]
     SB --> LS[Looker Studio]
-    H -.opcional.-> GP[GitHub Pages]
     Q1 & T & Q2 & V --> A[alertas<br/>resumen, webhook, issue]
 ```
 
@@ -142,10 +142,15 @@ sequenceDiagram
     P->>PG: registra la publicación en qqp_meta.publicaciones
 ```
 
-El intercambio ocurre en una sola transacción: el dashboard nunca ve una versión a medias y un fallo a mitad de la
-carga conserva la anterior (probado contra PostgreSQL 16 real). Para caber en el plan gratuito de Supabase
+El intercambio ocurre en una sola transacción: quien consulta nunca ve una versión a medias y un fallo a mitad de
+la carga conserva la anterior (probado contra PostgreSQL 16 real). Para caber en el plan gratuito de Supabase
 (500 MB) se publica una versión compacta: agregados nacionales de disponibilidad y detalle precio-producto limitado
 a 52 semanas (D-036).
+
+**Bajo demanda (D-041).** La ejecución semanal no publica salvo que la variable `QQP_PUBLICAR_SUPABASE` sea `true`;
+una ejecución manual publica con la casilla `publicar`, y en local basta `python -m src.cli publish`. La capa que
+sirve los resultados es GitHub Pages: el dashboard estático se despliega aunque la base esté pausada, porque no la
+necesita. El publicador conserva sus pruebas de integración contra un PostgreSQL real en cada push.
 
 ## 8. Seguridad
 

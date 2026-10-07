@@ -134,10 +134,16 @@ sin desplazamiento horizontal de la página; temas claro y oscuro; filtros de pe
 
 ## 6. Publicación
 
-- **GitHub Pages (opcional).** En Settings → Pages, elegir "GitHub Actions" como origen y definir la variable de
-  repositorio `QQP_PUBLICAR_DASHBOARD=true`. El trabajo `dashboard` del workflow despliega
-  `reports/dashboard/` solo después de una ejecución completa (programada o manual en modo completo) sin fallas.
-- **Artefacto de la ejecución.** Sin Pages, el HTML queda en el artefacto `reportes-<run_id>` de cada ejecución.
+**En vivo: <https://isaacmartinez.space/analisis_profeco/>**, desplegado desde GitHub Pages por el trabajo
+`dashboard` del workflow semanal (activo desde el 2026-10-07).
+
+- **Cómo se despliega.** El paso `Preparar dashboard para GitHub Pages` sube el artefacto cuando la ejecución es en
+  modo completo y la variable `QQP_PUBLICAR_DASHBOARD` es `true`. El trabajo `dashboard` despliega si ese paso tuvo
+  éxito, aunque un paso posterior falle: la página no depende de Supabase (D-041). Como el paso va después de las
+  pruebas dbt, la calidad del modelo y la validación independiente, la compuerta de calidad se conserva.
+- **Configuración inicial** (ya hecha): Settings → Pages con origen "GitHub Actions", variable
+  `QQP_PUBLICAR_DASHBOARD=true` y HTTPS forzado.
+- **Artefacto de la ejecución.** El HTML también queda en el artefacto `reportes-<run_id>` de cada ejecución.
 
 El archivo contiene solo agregados de datos abiertos, sin credenciales ni datos personales.
 

@@ -3,13 +3,18 @@
 # - pruebas: en cada push y pull request. Lint, pruebas unitarias y de integración (PostgreSQL de servicio) y el
 #   pipeline completo con la muestra versionada, incluida una publicación de prueba.
 # - pipeline: cada lunes y a demanda. Descarga los archivos oficiales, ejecuta cada paso por separado para que la
-#   falla sea visible, publica en Supabase solo si todas las pruebas y validaciones pasaron, y alerta si algo falla.
+#   falla sea visible, genera el dashboard y alerta si algo falla.
+# - dashboard: despliega el dashboard en GitHub Pages. Es la capa que sirve los resultados.
+#
+# Publicación en Supabase (bajo demanda, D-041): la ejecución semanal NO publica salvo que la variable
+# QQP_PUBLICAR_SUPABASE sea 'true'; una ejecución manual publica si se marca la casilla. El dashboard no depende de
+# la base, así que una falla al publicar no impide el despliegue de la página.
 #
 # Secretos requeridos para publicar (Settings → Secrets and variables → Actions):
 #   SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_NAME, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD
 # Opcionales: secreto ALERTA_WEBHOOK_URL; variables QQP_PG_ROL_LECTURA y QQP_PG_SEMANAS_DETALLE.
-# Dashboard en GitHub Pages (opcional): variable QQP_PUBLICAR_DASHBOARD=true y Pages con origen "GitHub Actions"
-# (Settings → Pages). Solo se despliega tras una ejecución completa sin fallas.
+# Dashboard en GitHub Pages: variable QQP_PUBLICAR_DASHBOARD=true y Pages con origen "GitHub Actions"
+# (Settings → Pages).
 
 name: Pipeline semanal PROFECO QQP
 
@@ -113,9 +118,13 @@ jobs:
     permissions:
       contents: read
       issues: write
+    outputs:
+      # Permite desplegar la página aunque un paso posterior falle (D-041).
+      dashboard_listo: ${{ steps.pages.outcome == 'success' }}
     env:
       MODO_FLAG: ${{ github.event_name == 'workflow_dispatch' && inputs.modo == 'muestra' && '--muestra' || '' }}
-      PUBLICAR: ${{ github.event_name == 'schedule' || inputs.publicar }}
+      # Semanal: solo con QQP_PUBLICAR_SUPABASE=true. Manual: según la casilla (D-041).
+      PUBLICAR: ${{ (github.event_name == 'schedule' && vars.QQP_PUBLICAR_SUPABASE == 'true') || (github.event_name == 'workflow_dispatch' && inputs.publicar) }}
       ALERTA_WEBHOOK_URL: ${{ secrets.ALERTA_WEBHOOK_URL }}
       # El runner empieza vacío en cada ejecución: la versión descargada es la vigente.
       QQP_DESCARGA_REEMPLAZAR: "1"
@@ -179,12 +188,13 @@ jobs:
         run: python -m src.cli $MODO_FLAG dashboard
 
       - name: Preparar dashboard para GitHub Pages
+        id: pages
         if: env.MODO_FLAG == '' && vars.QQP_PUBLICAR_DASHBOARD == 'true'
         uses: actions/upload-pages-artifact@v5
         with:
           path: reports/dashboard/
 
-      - name: Publicación en Supabase
+      - name: Publicación en Supabase (bajo demanda)
         if: env.PUBLICAR == 'true'
         env:
           SUPABASE_DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
@@ -224,7 +234,8 @@ jobs:
               `- Evento: \`${context.eventName}\``,
               `- Commit: \`${context.sha.slice(0, 7)}\``,
               '',
-              'No se publicó nada nuevo: la versión anterior en Supabase sigue vigente.',
+              'Si la publicación en Supabase estaba activada, no se publicó nada nuevo: la versión anterior sigue vigente.',
+              'El dashboard se despliega igual si alcanzó a generarse: la página no depende de Supabase (D-041).',
               'Revisa el paso fallido, el resumen de la ejecución y el artefacto de reportes.',
             ].join('\n');
             const { data: abiertos } = await github.rest.issues.listForRepo({
@@ -241,10 +252,10 @@ jobs:
   dashboard:
     name: Dashboard en GitHub Pages
     needs: pipeline
-    # El trabajo `pipeline` solo termina bien si todas las pruebas y validaciones pasaron.
-    if: >-
-      vars.QQP_PUBLICAR_DASHBOARD == 'true' &&
-      (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.modo == 'completo'))
+    # Despliega si el dashboard llegó a generarse, aunque la publicación en Supabase falle después: la página no
+    # depende de la base (D-041). El paso que sube el artefacto ya exige modo completo y la variable activada, y
+    # solo se ejecuta después de las pruebas dbt, la calidad del modelo y la validación independiente.
+    if: ${{ !cancelled() && needs.pipeline.outputs.dashboard_listo == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

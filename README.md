@@ -23,7 +23,9 @@ ejecutiva) y [`reports/resultados_canasta.md`](reports/resultados_canasta.md) (v
 
 ## Dashboard
 
-![Resumen del dashboard con datos al 2026-07-27](docs/img/dashboard_resumen.png)
+**En vivo: <https://isaacmartinez.space/analisis_profeco/>** · se regenera cada lunes con la ejecución semanal.
+
+[![Resumen del dashboard con datos al 2026-07-27](docs/img/dashboard_resumen.png)](https://isaacmartinez.space/analisis_profeco/)
 
 Seis páginas, una por vista de la especificación: resumen, costo por cadena, ahorro, productos, cobertura y
 disponibilidad. Tiene filtros de periodo, cadena, grupo empresarial y estado, y cada cifra es trazable a una tabla
@@ -47,9 +49,9 @@ flowchart LR
     N --> M[dbt · esquema estrella<br/>marts y vistas BI]
     M --> V[pruebas dbt y<br/>validación independiente]
     V --> H[dashboard<br/>HTML estático]
-    H --> S[(Supabase<br/>publicación atómica)]
+    H --> G[GitHub Pages<br/>página pública]
+    H -.bajo demanda.-> S[(Supabase<br/>publicación atómica)]
     S --> L[Looker Studio]
-    H -.opcional.-> G[GitHub Pages]
     V -.falla.-> A[alerta e issue<br/>no se publica]
 ```
 
@@ -86,10 +88,21 @@ separado: `inspect`, `ingest`, `quality`, `normalize`, `dbt-run`, `dbt-test`, `q
 Sin credenciales de Supabase configuradas, el pipeline termina correctamente después de validar los marts y avisa
 que no publicará.
 
-### Publicación (opcional)
+### Publicación en PostgreSQL (bajo demanda)
 
-Copia `.env.example` a `.env` y completa las variables `SUPABASE_DB_*`. En GitHub Actions los mismos nombres son
-secretos del repositorio. La guía de conexión, el rol de solo lectura y la especificación del dashboard están en
+El pipeline publica los marts en Supabase con intercambio atómico de esquemas, verificación de conteos y un rol de
+solo lectura:
+
+```bash
+python -m src.cli publish   # requiere .env con las variables SUPABASE_DB_*
+```
+
+No se ejecuta cada semana: el dashboard ya no depende de la base y el plan gratuito pausa los proyectos inactivos
+(D-040, D-041, L-22). Para activarla en la ejecución semanal, define la variable `QQP_PUBLICAR_SUPABASE=true`; en
+una ejecución manual basta con marcar la casilla. El publicador se prueba en cada push contra un PostgreSQL 16
+real, y el pipeline de la muestra hace una publicación de prueba en cada corrida de CI.
+
+La guía de conexión, el rol de solo lectura y la especificación del tablero de Looker Studio están en
 [`docs/dashboard_looker_studio.md`](docs/dashboard_looker_studio.md).
 
 ### Pruebas
@@ -134,15 +147,15 @@ data/          raw (inmutable), sample (versionada), mappings, processed (ignora
 
 ## Automatización
 
-El workflow [`pipeline-semanal.yml`](.github/workflows/pipeline-semanal.yml) tiene dos trabajos:
+El workflow [`pipeline-semanal.yml`](.github/workflows/pipeline-semanal.yml) tiene tres trabajos:
 
 - **Pruebas** en cada push y pull request: lint, pruebas unitarias y de integración (servicio PostgreSQL 16) y el
   pipeline completo con la muestra, incluida una publicación de prueba.
-- **Pipeline completo** los lunes a las 13:00 UTC y a demanda: descarga los archivos vigentes, ejecuta cada paso por
-  separado y publica en Supabase solo si todo pasó. Ante cualquier falla escribe un resumen, opcionalmente notifica
-  a un webhook y abre o actualiza un issue de alerta.
-- **Dashboard en GitHub Pages** (opcional, con la variable `QQP_PUBLICAR_DASHBOARD=true`): se despliega solo
-  después de una ejecución completa sin fallas.
+- **Pipeline completo** los lunes a las 13:00 UTC y a demanda: descarga los archivos vigentes, ejecuta cada paso
+  por separado y genera el dashboard. Ante cualquier falla escribe un resumen, opcionalmente notifica a un webhook
+  y abre o actualiza un issue de alerta. Publica en Supabase solo bajo demanda (D-041).
+- **Dashboard en GitHub Pages**: despliega la página pública si el dashboard llegó a generarse, es decir, después
+  de las pruebas dbt, la calidad del modelo y la validación independiente. No depende de Supabase.
 
 ## Alcance y límites
 
