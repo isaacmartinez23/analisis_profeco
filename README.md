@@ -23,9 +23,9 @@ ejecutiva) y [`reports/resultados_canasta.md`](reports/resultados_canasta.md) (v
 
 ## Dashboard
 
-**En vivo: <https://isaacmartinez.space/analisis_profeco/>** · se regenera cada lunes con la ejecución semanal.
+**En vivo: <https://isaacmartinez.space/analisis_profeco/>** · datos al 31 de julio de 2026.
 
-[![Resumen del dashboard con datos al 2026-07-27](docs/img/dashboard_resumen.png)](https://isaacmartinez.space/analisis_profeco/)
+[![Resumen del dashboard; última semana comparable, 27 de julio de 2026](docs/img/dashboard_resumen.png)](https://isaacmartinez.space/analisis_profeco/)
 
 Seis páginas, una por vista de la especificación: resumen, costo por cadena, ahorro, productos, cobertura y
 disponibilidad. Tiene filtros de periodo, cadena, grupo empresarial y estado, y cada cifra es trazable a una tabla
@@ -37,6 +37,23 @@ python -m src.cli dashboard   # reports/dashboard/index.html
 
 Detalle, agregaciones y verificación en [`docs/dashboard.md`](docs/dashboard.md). La especificación para Looker
 Studio sobre Supabase sigue disponible en [`docs/dashboard_looker_studio.md`](docs/dashboard_looker_studio.md).
+
+### Por qué el dashboard no cambia cada semana
+
+Porque la fuente tampoco. PROFECO publica por lotes y con rezago: junio y julio de 2026 aparecieron juntos a
+mediados de septiembre, y al 7 de octubre agosto todavía no está disponible. En la práctica llegan datos nuevos
+cada mes o más, no cada semana.
+
+La consecuencia es visible en las propias ejecuciones: las del 21 y 28 de septiembre y las del 5 y 7 de octubre
+publicaron exactamente las mismas **317,745 filas**, con datos al 31 de julio. Actualizar el tablero más seguido no
+agregaría ni una observación.
+
+Por eso la ejecución semanal no está pensada como "refresco de datos" sino como **vigilancia de la fuente**:
+descarga la versión vigente, detecta en días —no en meses— que apareció un archivo nuevo o que cambió su formato, y
+solo entonces el dashboard cambia. Esa vigilancia ya se ganó su lugar: en septiembre detectó tres columnas nuevas
+sin documentar, acentos perdidos en un tercio de las filas y cuatro catálogos renombrados
+([`docs/caso_estudio.md`](docs/caso_estudio.md)). El indicador M-08 publica cuántos días lleva el dato más reciente,
+hoy en alerta por el rezago del origen (L-20), no por el pipeline.
 
 ## Arquitectura
 
@@ -153,7 +170,9 @@ El workflow [`pipeline-semanal.yml`](.github/workflows/pipeline-semanal.yml) tie
   pipeline completo con la muestra, incluida una publicación de prueba.
 - **Pipeline completo** los lunes a las 13:00 UTC y a demanda: descarga los archivos vigentes, ejecuta cada paso
   por separado y genera el dashboard. Ante cualquier falla escribe un resumen, opcionalmente notifica a un webhook
-  y abre o actualiza un issue de alerta. Publica en Supabase solo bajo demanda (D-041).
+  y abre o actualiza un issue de alerta. Publica en Supabase solo bajo demanda (D-041). La cadencia semanal es para
+  **detectar** datos nuevos o cambios de formato en la fuente, no porque haya datos nuevos cada semana: PROFECO
+  publica cada mes o más.
 - **Dashboard en GitHub Pages**: despliega la página pública si el dashboard llegó a generarse, es decir, después
   de las pruebas dbt, la calidad del modelo y la validación independiente. No depende de Supabase.
 
@@ -165,6 +184,8 @@ El workflow [`pipeline-semanal.yml`](.github/workflows/pipeline-semanal.yml) tie
   que parte de la diferencia entre cadenas refleja su mezcla de marcas (marca propia frente a marca comercial).
 - El costo de la canasta es un **índice comparable** entre cadenas y semanas, no el gasto real de un hogar.
 - Las comparaciones entre cadenas siempre son pareadas: misma canasta, mismo municipio y misma semana.
+- La frescura depende del origen: PROFECO publica por lotes, con semanas o meses de rezago, así que la última
+  semana disponible puede quedar lejos de la fecha de hoy (L-20).
 
 La lista completa está en [`docs/limitaciones.md`](docs/limitaciones.md).
 
