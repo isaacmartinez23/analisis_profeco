@@ -27,3 +27,6 @@ transform/.user.yml
 transform/dbt_packages/
 transform/logs/
 logs/
+
+# Marca de falla del origen (solo en CI, la crea el paso de descarga)
+.falla_fuente
