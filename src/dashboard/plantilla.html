@@ -392,6 +392,8 @@ svg .b0 { fill: var(--seq-0); }
 .pie p, .pie li { font-size: 13px; color: var(--tinta-2); }
 .pie ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
 .pie code, .pie__meta { font-family: var(--mono); font-size: 12px; }
+.pie a { color: var(--acento); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.pie a:hover { text-decoration-thickness: 2px; }
 .pie__meta { grid-column: 1 / -1; color: var(--tenue); overflow-wrap: anywhere; }
 
 /* Tooltip */
@@ -783,6 +785,12 @@ svg .b0 { fill: var(--seq-0); }
       <li>Productos: <code>bi_diferencias_producto_semanal</code> y <code>mart_precio_producto</code>.</li>
       <li>Cobertura y disponibilidad: <code>mart_cobertura_datos</code>, <code>mart_canasta_semanal</code>, <code>bi_disponibilidad_semanal</code>, <code>bi_disponibilidad_articulos</code>.</li>
     </ul>
+  </section>
+  <section>
+    <h2>Código</h2>
+    <p>Pipeline, notebooks y pruebas en
+      <a href="https://github.com/isaacmartinez23/analisis_profeco" target="_blank" rel="noopener">GitHub</a>.
+      Portafolio: <a href="https://isaacmartinez.space/" target="_blank" rel="noopener">isaacmartinez.space</a>.</p>
   </section>
   <p class="pie__meta" id="pie-meta"></p>
 </footer>
