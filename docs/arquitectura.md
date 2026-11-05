@@ -62,7 +62,7 @@ versión anterior en Supabase sigue vigente.
 | Análisis | `src/analysis/` | Selección de la canasta, recálculo independiente (compuerta) y reportes de resultados. |
 | Dashboard | `src/dashboard/` | Extrae las tablas `bi` y los marts de la versión vigente, valida el contrato y escribe un HTML estático con los datos incrustados (D-040, `docs/dashboard.md`). |
 | Publicación | `src/publish/postgres.py` | Carga a un esquema temporal, verifica conteos y reemplaza el esquema en una sola transacción (D-029). |
-| Automatización | `.github/workflows/pipeline-semanal.yml` | Pruebas en cada push y PR; pipeline completo los lunes y a demanda; despliegue opcional del dashboard en GitHub Pages. |
+| Automatización | `.github/workflows/pipeline-semanal.yml` | Pruebas en cada push y PR; pipeline completo el día 1 de cada mes y a demanda (D-043); despliegue del dashboard en GitHub Pages. |
 | Alertas | `src/alertas.py` | Resumen en `$GITHUB_STEP_SUMMARY`, webhook opcional e issue automático ante falla. |
 
 ## 3. Modelo dimensional
@@ -147,7 +147,7 @@ la carga conserva la anterior (probado contra PostgreSQL 16 real). Para caber en
 (500 MB) se publica una versión compacta: agregados nacionales de disponibilidad y detalle precio-producto limitado
 a 52 semanas (D-036).
 
-**Bajo demanda (D-041).** La ejecución semanal no publica salvo que la variable `QQP_PUBLICAR_SUPABASE` sea `true`;
+**Bajo demanda (D-041).** La ejecución programada no publica salvo que la variable `QQP_PUBLICAR_SUPABASE` sea `true`;
 una ejecución manual publica con la casilla `publicar`, y en local basta `python -m src.cli publish`. La capa que
 sirve los resultados es GitHub Pages: el dashboard estático se despliega aunque la base esté pausada, porque no la
 necesita. El publicador conserva sus pruebas de integración contra un PostgreSQL real en cada push.

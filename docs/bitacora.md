@@ -551,3 +551,12 @@ lógica nueva lo reconozca en lugar de abrir otro.
 - Actualizar `data/fuentes_profeco.csv` a las rutas nuevas y manejar el cambio de carpeta de 2026, cuando PROFECO
   sirva archivos completos.
 - Reportar a PROFECO que los archivos del catálogo están incompletos.
+
+### 2026-11-04 · Cierre del alcance
+
+Con el origen roto y 96 días sin datos nuevos, se declara el corte en lugar de arrastrar una fecha que envejece
+(D-043): el README abre con el periodo analizado y una sección de estado, y la ejecución programada pasa de
+semanal a mensual. También se fusionó D-042, de modo que una falla del origen avisa una sola vez.
+
+El proyecto queda cerrado como pieza de portafolio: lo que falta no es ingeniería, es que la fuente vuelva a
+publicar archivos completos.

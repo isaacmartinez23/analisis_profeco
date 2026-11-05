@@ -475,3 +475,27 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
   completos, sin acumular un comentario por semana. El riesgo es el inverso: si la falla del origen se vuelve
   permanente, el issue puede quedar abierto mucho tiempo sin que nadie lo relea; por eso el cuerpo se actualiza con
   la fecha y la ejecución más reciente.
+
+## D-043 · Corte de datos declarado y vigilancia mensual (aprobada)
+
+- **Fecha:** 2026-11-04 · **Fase:** 4 (cierre)
+- **Contexto:** La serie termina el 2026-07-31 y así lleva 96 días. PROFECO publica por lotes —junio y julio
+  aparecieron juntos a mediados de septiembre— y desde octubre su catálogo cambió de rutas y sirve archivos
+  truncados (L-16). Cuatro ejecuciones semanales seguidas procesaron exactamente las mismas 317,745 filas antes de
+  que el origen se rompiera: la cadencia semanal no agregaba una sola observación.
+- **Decisión:** Declarar el alcance en lugar de arrastrar una fecha que envejece.
+  1. El README abre con el periodo analizado (2024-01-02 a 2026-07-31) y una sección de estado que dice que el
+     proyecto está completo y por qué la serie termina ahí.
+  2. La ejecución programada pasa de semanal a **mensual** (día 1, 13:00 UTC). Sigue siendo vigilancia de la
+     fuente, no refresco de datos: detecta archivos nuevos o cambios de formato, y solo entonces cambia algo.
+  3. El workflow conserva el nombre de archivo `pipeline-semanal.yml` por estabilidad de los enlaces ya publicados
+     en la documentación y en los PR fusionados; su nombre visible pasa a `Pipeline PROFECO QQP`.
+- **Alternativas descartadas:** Apagar el cron y dejar solo la ejecución manual (deja de detectar el regreso del
+  dato, y un programado apagado no se distingue de un proyecto abandonado); mantener la cadencia semanal (cuatro
+  ejecuciones idénticas y, con el origen roto, una falla en rojo cada lunes); tratar la ausencia de datos como una
+  no-operación en verde (más honesto con la intención, pero hoy el origen no está "sin publicar" sino sirviendo
+  archivos corruptos, que sí merece rojo).
+- **Consecuencias:** Un periodo declarado se lee como alcance y no como descuido, y el proyecto deja de requerir
+  atención semanal. Si PROFECO republica archivos completos, el retraso máximo en incorporarlos es de un mes, o
+  cero si se lanza la ejecución a mano. Las cifras del README, el memo y el caso de estudio quedan fijas mientras
+  el corte no cambie.

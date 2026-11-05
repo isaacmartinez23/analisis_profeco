@@ -2,11 +2,13 @@
 #
 # - pruebas: en cada push y pull request. Lint, pruebas unitarias y de integración (PostgreSQL de servicio) y el
 #   pipeline completo con la muestra versionada, incluida una publicación de prueba.
-# - pipeline: cada lunes y a demanda. Descarga los archivos oficiales, ejecuta cada paso por separado para que la
-#   falla sea visible, genera el dashboard y alerta si algo falla.
+# - pipeline: el día 1 de cada mes y a demanda. Descarga los archivos oficiales, ejecuta cada paso por separado
+#   para que la falla sea visible, genera el dashboard y alerta si algo falla.
 # - dashboard: despliega el dashboard en GitHub Pages. Es la capa que sirve los resultados.
 #
-# Publicación en Supabase (bajo demanda, D-041): la ejecución semanal NO publica salvo que la variable
+# El archivo conserva el nombre `pipeline-semanal.yml` por estabilidad de enlaces, aunque la cadencia ya no lo sea.
+#
+# Publicación en Supabase (bajo demanda, D-041): la ejecución programada NO publica salvo que la variable
 # QQP_PUBLICAR_SUPABASE sea 'true'; una ejecución manual publica si se marca la casilla. El dashboard no depende de
 # la base, así que una falla al publicar no impide el despliegue de la página.
 #
@@ -16,11 +18,12 @@
 # Dashboard en GitHub Pages: variable QQP_PUBLICAR_DASHBOARD=true y Pages con origen "GitHub Actions"
 # (Settings → Pages).
 
-name: Pipeline semanal PROFECO QQP
+name: Pipeline PROFECO QQP
 
 on:
   schedule:
-    - cron: "0 13 * * 1" # lunes 13:00 UTC (07:00 en la Ciudad de México)
+    # Mensual (D-043): PROFECO publica por lotes, cada mes o más, no cada semana.
+    - cron: "0 13 1 * *" # día 1 de cada mes, 13:00 UTC (07:00 en la Ciudad de México)
   workflow_dispatch:
     inputs:
       modo:
@@ -148,7 +151,7 @@ jobs:
         run: pip install -r requirements.txt
 
       # Una falla aquí es del origen (enlace caído, archivo incompleto), no del pipeline: deja una marca para que
-      # la alerta no abra un comentario nuevo cada lunes por la misma causa.
+      # la alerta no abra un comentario nuevo en cada ejecución por la misma causa.
       - name: Descargar archivos oficiales de PROFECO
         if: env.MODO_FLAG == ''
         run: python -m src.cli download || { touch .falla_fuente; exit 1; }
@@ -240,7 +243,7 @@ jobs:
             const url = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
             const titulo = esFuente
               ? 'Los datos de origen de PROFECO no están disponibles'
-              : 'Falla del pipeline semanal PROFECO QQP';
+              : 'Falla del pipeline PROFECO QQP';
             const cuerpo = esFuente
               ? [
                   'La descarga de los archivos oficiales falló: el enlace cambió o el archivo que sirve PROFECO está',
@@ -249,7 +252,7 @@ jobs:
                   `- Última ejecución afectada: ${url}`,
                   `- Fecha: ${new Date().toISOString().slice(0, 10)}`,
                   '',
-                  'Mientras el origen siga así, las ejecuciones de los lunes seguirán deteniéndose aquí y este issue se',
+                  'Mientras el origen siga así, las ejecuciones programadas seguirán deteniéndose aquí y este issue se',
                   'actualizará en silencio, sin comentarios nuevos. Se cierra solo cuando PROFECO vuelva a publicar',
                   'archivos completos y una ejecución pase (ver `docs/limitaciones.md`, L-16).',
                 ].join('\n')

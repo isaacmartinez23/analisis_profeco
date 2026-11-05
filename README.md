@@ -5,10 +5,26 @@ productos y presentaciones, modela un esquema estrella, calcula el costo semanal
 publica tablas analíticas listas para un dashboard.
 
 De 36 millones de precios crudos a cuatro marts que responden cinco preguntas, con pruebas en cada paso, una
-ejecución semanal automatizada y un dashboard que se genera con el pipeline.
+ejecución automatizada y un dashboard que se genera con el pipeline.
+
+**Periodo analizado:** 2 de enero de 2024 a 31 de julio de 2026 · 35.6 millones de observaciones · 135 semanas ·
+75 municipios en 30 estados.
 
 **Stack:** Python 3.12 · DuckDB · dbt · PostgreSQL (Supabase) · GitHub Actions · HTML/SVG · Looker Studio · pytest ·
 ruff
+
+## Estado del proyecto
+
+**Completo**, con un corte de datos declarado: la serie termina el 31 de julio de 2026 porque es hasta donde llega
+la fuente.
+
+El pipeline sigue vigilando el origen el día 1 de cada mes. Desde octubre de 2026 PROFECO reorganizó su catálogo de
+datos abiertos —los enlaces con token devuelven 404— y los archivos de la ruta nueva se sirven **truncados**: los
+de 2024, 2025 y 2026 se cortan a media lectura, con 18 de 24, 15 y 6 CSV listados respectivamente. El pipeline se
+detiene en el primer paso y no publica nada a medias, que es lo que debe hacer. El detalle y la evidencia están en
+[`docs/limitaciones.md`](docs/limitaciones.md) (L-16) y en la [bitácora](docs/bitacora.md).
+
+Cuando el origen vuelva a publicar archivos completos, la siguiente ejecución los incorpora sola.
 
 ## Preguntas que responde
 
@@ -38,22 +54,22 @@ python -m src.cli dashboard   # reports/dashboard/index.html
 Detalle, agregaciones y verificación en [`docs/dashboard.md`](docs/dashboard.md). La especificación para Looker
 Studio sobre Supabase sigue disponible en [`docs/dashboard_looker_studio.md`](docs/dashboard_looker_studio.md).
 
-### Por qué el dashboard no cambia cada semana
+### Por qué el corte es julio de 2026
 
-Porque la fuente tampoco. PROFECO publica por lotes y con rezago: junio y julio de 2026 aparecieron juntos a
-mediados de septiembre, y al 7 de octubre agosto todavía no está disponible. En la práctica llegan datos nuevos
-cada mes o más, no cada semana.
+Porque es hasta donde llega la fuente. PROFECO publica por lotes y con rezago: junio y julio de 2026 aparecieron
+juntos a mediados de septiembre, y agosto nunca llegó. En la práctica llegan datos nuevos cada mes o más, no cada
+semana.
 
-La consecuencia es visible en las propias ejecuciones: las del 21 y 28 de septiembre y las del 5 y 7 de octubre
-publicaron exactamente las mismas **317,745 filas**, con datos al 31 de julio. Actualizar el tablero más seguido no
-agregaría ni una observación.
+La consecuencia se ve en las propias ejecuciones: las del 21 y 28 de septiembre y las del 5 y 7 de octubre
+publicaron exactamente las mismas **317,745 filas**. Correr el pipeline más seguido no agregaría ni una
+observación, y por eso la ejecución programada es mensual (D-043).
 
-Por eso la ejecución semanal no está pensada como "refresco de datos" sino como **vigilancia de la fuente**:
-descarga la versión vigente, detecta en días —no en meses— que apareció un archivo nuevo o que cambió su formato, y
-solo entonces el dashboard cambia. Esa vigilancia ya se ganó su lugar: en septiembre detectó tres columnas nuevas
-sin documentar, acentos perdidos en un tercio de las filas y cuatro catálogos renombrados
-([`docs/caso_estudio.md`](docs/caso_estudio.md)). El indicador M-08 publica cuántos días lleva el dato más reciente,
-hoy en alerta por el rezago del origen (L-20), no por el pipeline.
+No está pensada como "refresco de datos" sino como **vigilancia de la fuente**: descarga la versión vigente y
+detecta que apareció un archivo nuevo o que cambió su formato. Esa vigilancia ya se ganó su lugar dos veces: en
+septiembre detectó tres columnas nuevas sin documentar, acentos perdidos en un tercio de las filas y cuatro
+catálogos renombrados; en octubre detectó que el catálogo entero había cambiado de ruta y que los archivos nuevos
+venían incompletos ([`docs/caso_estudio.md`](docs/caso_estudio.md)). El indicador M-08 publica cuántos días lleva
+el dato más reciente: está en alerta por el rezago del origen (L-20), no por el pipeline.
 
 ## Arquitectura
 
@@ -115,7 +131,7 @@ python -m src.cli publish   # requiere .env con las variables SUPABASE_DB_*
 ```
 
 No se ejecuta cada semana: el dashboard ya no depende de la base y el plan gratuito pausa los proyectos inactivos
-(D-040, D-041, L-22). Para activarla en la ejecución semanal, define la variable `QQP_PUBLICAR_SUPABASE=true`; en
+(D-040, D-041, L-22). Para activarla en la ejecución programada, define la variable `QQP_PUBLICAR_SUPABASE=true`; en
 una ejecución manual basta con marcar la casilla. El publicador se prueba en cada push contra un PostgreSQL 16
 real, y el pipeline de la muestra hace una publicación de prueba en cada corrida de CI.
 
@@ -142,7 +158,7 @@ tests/         pruebas unitarias y de integración
 docs/          arquitectura, decisiones, contratos, reglas, limitaciones, bitácora
 reports/       perfil de datos, calidad, resultados, memo ejecutivo (y el dashboard generado, no versionado)
 data/          raw (inmutable), sample (versionada), mappings, processed (ignorado)
-.github/       ejecución semanal y pruebas en cada push
+.github/       ejecución mensual y pruebas en cada push
 ```
 
 ## Documentación
@@ -150,7 +166,7 @@ data/          raw (inmutable), sample (versionada), mappings, processed (ignora
 | Documento | Para qué |
 |---|---|
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Cómo funciona el pipeline de punta a punta |
-| [`docs/decisiones.md`](docs/decisiones.md) | Registro de decisiones (D-001 a D-041) con contexto y consecuencias |
+| [`docs/decisiones.md`](docs/decisiones.md) | Registro de decisiones (D-001 a D-043) con contexto y consecuencias |
 | [`docs/contrato_datos.md`](docs/contrato_datos.md) | Contrato de cada tabla: grano, llaves, tipos, nulos, supuestos |
 | [`docs/catalogo_metricas.md`](docs/catalogo_metricas.md) | Definición y fórmula de cada métrica, con su trazabilidad |
 | [`docs/reglas_calidad.md`](docs/reglas_calidad.md) | Reglas, umbrales y qué pasa cuando fallan |
@@ -168,11 +184,11 @@ El workflow [`pipeline-semanal.yml`](.github/workflows/pipeline-semanal.yml) tie
 
 - **Pruebas** en cada push y pull request: lint, pruebas unitarias y de integración (servicio PostgreSQL 16) y el
   pipeline completo con la muestra, incluida una publicación de prueba.
-- **Pipeline completo** los lunes a las 13:00 UTC y a demanda: descarga los archivos vigentes, ejecuta cada paso
-  por separado y genera el dashboard. Ante cualquier falla escribe un resumen, opcionalmente notifica a un webhook
-  y abre o actualiza un issue de alerta. Publica en Supabase solo bajo demanda (D-041). La cadencia semanal es para
-  **detectar** datos nuevos o cambios de formato en la fuente, no porque haya datos nuevos cada semana: PROFECO
-  publica cada mes o más.
+- **Pipeline completo** el día 1 de cada mes y a demanda: descarga los archivos vigentes, ejecuta cada paso por
+  separado y genera el dashboard. Publica en Supabase solo bajo demanda (D-041). La cadencia es mensual porque
+  sirve para **detectar** datos nuevos o cambios de formato, y PROFECO publica cada mes o más (D-043).
+  Ante una falla escribe un resumen y abre un issue, distinguiendo un problema del origen —que avisa una sola vez—
+  de uno del pipeline (D-042).
 - **Dashboard en GitHub Pages**: despliega la página pública si el dashboard llegó a generarse, es decir, después
   de las pruebas dbt, la calidad del modelo y la validación independiente. No depende de Supabase.
 
