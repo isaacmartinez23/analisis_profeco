@@ -16,7 +16,7 @@ python -m src.cli --muestra dashboard  # con la muestra versionada
 
 Requiere la base DuckDB construida (`pipeline` o, al menos, hasta `dbt-run`). Escribe
 `reports/dashboard/index.html` (con `--muestra`, en `data/processed/muestra/reports/dashboard/`). El archivo no se
-versiona: se regenera en cada ejecución y el workflow semanal lo guarda como artefacto.
+versiona: se regenera en cada ejecución y el workflow lo guarda como artefacto.
 
 Se abre con doble clic. Las fuentes vienen de Google Fonts; sin conexión, el navegador usa las fuentes del sistema.
 Para servirlo en local:
@@ -135,7 +135,7 @@ sin desplazamiento horizontal de la página; temas claro y oscuro; filtros de pe
 ## 6. Publicación
 
 **En vivo: <https://isaacmartinez.space/analisis_profeco/>**, desplegado desde GitHub Pages por el trabajo
-`dashboard` del workflow semanal (activo desde el 2026-10-07).
+`dashboard` del workflow (activo desde el 2026-10-07; la ejecución programada es mensual, D-043).
 
 - **Cómo se despliega.** El paso `Preparar dashboard para GitHub Pages` sube el artefacto cuando la ejecución es en
   modo completo y la variable `QQP_PUBLICAR_DASHBOARD` es `true`. El trabajo `dashboard` despliega si ese paso tuvo
