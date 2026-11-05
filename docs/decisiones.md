@@ -455,3 +455,23 @@ borran; si una cambia, se agrega una nueva que la reemplaza.
   contra un PostgreSQL 16 real en cada push y la publicación de prueba del pipeline de la muestra: la capacidad
   sigue probada, solo deja de ejecutarse en producción cada semana. Para demostrar la ruta de Looker Studio hay que
   reanudar el proyecto (unos 8 minutos) y lanzar una ejecución manual con la casilla marcada.
+
+## D-042 · Una falla del origen no hace el mismo ruido que una falla del pipeline (aprobada)
+
+- **Fecha:** 2026-11-03 · **Fase:** 4 (operación)
+- **Contexto:** Desde el 2026-10-12 las cuatro ejecuciones programadas fallaron en el primer paso: PROFECO
+  reorganizó su sitio y hoy sirve los tres archivos truncados (L-16). Cada lunes se agregaba un comentario al
+  mismo issue por la misma causa, que no depende del proyecto y que nadie puede resolver desde aquí. Un canal de
+  alertas que avisa cada semana de algo conocido deja de leerse, y entonces tampoco avisa de lo que sí importa.
+- **Decisión:** Distinguir dos clases de falla. Si falla la descarga, el paso deja la marca `.falla_fuente` y el
+  issue se abre con la etiqueta `fuente-no-disponible`, con un texto que explica que el pipeline no se rompió; en
+  los lunes siguientes ese issue se **actualiza en silencio** con la ejecución más reciente, sin comentarios
+  nuevos. Cualquier otra falla conserva el comportamiento anterior: etiqueta `alerta-pipeline` y un comentario por
+  cada ejecución.
+- **Alternativas descartadas:** Pausar el cron (deja de vigilar justo cuando se espera que el origen vuelva, y un
+  programado apagado no distingue "en pausa" de "abandonado"); bajar la frecuencia (mismo problema, menos visible);
+  silenciar la alerta por completo (perdería el aviso inicial, que sí es útil).
+- **Consecuencias:** La vigilancia semanal sigue corriendo y detectará el día que PROFECO republique archivos
+  completos, sin acumular un comentario por semana. El riesgo es el inverso: si la falla del origen se vuelve
+  permanente, el issue puede quedar abierto mucho tiempo sin que nadie lo relea; por eso el cuerpo se actualiza con
+  la fecha y la ejecución más reciente.

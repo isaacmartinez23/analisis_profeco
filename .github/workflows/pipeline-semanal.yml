@@ -147,9 +147,11 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
+      # Una falla aquí es del origen (enlace caído, archivo incompleto), no del pipeline: deja una marca para que
+      # la alerta no abra un comentario nuevo cada lunes por la misma causa.
       - name: Descargar archivos oficiales de PROFECO
         if: env.MODO_FLAG == ''
-        run: python -m src.cli download
+        run: python -m src.cli download || { touch .falla_fuente; exit 1; }
 
       - name: Inspección
         run: python -m src.cli $MODO_FLAG inspect
@@ -222,31 +224,54 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      # Dos clases de falla, dos niveles de ruido (D-042):
+      # - origen: el enlace cambió o el archivo está incompleto. Se avisa UNA vez y los lunes siguientes solo se
+      #   actualiza el issue abierto, sin comentarios nuevos.
+      # - pipeline: cualquier otro paso. Se comenta cada vez, como antes.
       - name: Abrir o actualizar issue de alerta
         if: failure()
         uses: actions/github-script@v9
         with:
           script: |
+            const fs = require('fs');
             const { owner, repo } = context.repo;
+            const esFuente = fs.existsSync('.falla_fuente');
+            const etiqueta = esFuente ? 'fuente-no-disponible' : 'alerta-pipeline';
             const url = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
-            const cuerpo = [
-              `La ejecución ${url} del pipeline falló.`,
-              `- Evento: \`${context.eventName}\``,
-              `- Commit: \`${context.sha.slice(0, 7)}\``,
-              '',
-              'Si la publicación en Supabase estaba activada, no se publicó nada nuevo: la versión anterior sigue vigente.',
-              'El dashboard se despliega igual si alcanzó a generarse: la página no depende de Supabase (D-041).',
-              'Revisa el paso fallido, el resumen de la ejecución y el artefacto de reportes.',
-            ].join('\n');
+            const titulo = esFuente
+              ? 'Los datos de origen de PROFECO no están disponibles'
+              : 'Falla del pipeline semanal PROFECO QQP';
+            const cuerpo = esFuente
+              ? [
+                  'La descarga de los archivos oficiales falló: el enlace cambió o el archivo que sirve PROFECO está',
+                  'incompleto. **No es una falla del pipeline**, que se detuvo en el primer paso sin publicar nada.',
+                  '',
+                  `- Última ejecución afectada: ${url}`,
+                  `- Fecha: ${new Date().toISOString().slice(0, 10)}`,
+                  '',
+                  'Mientras el origen siga así, las ejecuciones de los lunes seguirán deteniéndose aquí y este issue se',
+                  'actualizará en silencio, sin comentarios nuevos. Se cierra solo cuando PROFECO vuelva a publicar',
+                  'archivos completos y una ejecución pase (ver `docs/limitaciones.md`, L-16).',
+                ].join('\n')
+              : [
+                  `La ejecución ${url} del pipeline falló.`,
+                  `- Evento: \`${context.eventName}\``,
+                  `- Commit: \`${context.sha.slice(0, 7)}\``,
+                  '',
+                  'Si la publicación en Supabase estaba activada, no se publicó nada nuevo: la versión anterior sigue vigente.',
+                  'El dashboard se despliega igual si alcanzó a generarse: la página no depende de Supabase (D-041).',
+                  'Revisa el paso fallido, el resumen de la ejecución y el artefacto de reportes.',
+                ].join('\n');
             const { data: abiertos } = await github.rest.issues.listForRepo({
-              owner, repo, state: 'open', labels: 'alerta-pipeline',
+              owner, repo, state: 'open', labels: etiqueta,
             });
-            if (abiertos.length > 0) {
-              await github.rest.issues.createComment({ owner, repo, issue_number: abiertos[0].number, body: cuerpo });
+            if (abiertos.length === 0) {
+              await github.rest.issues.create({ owner, repo, title: titulo, body: cuerpo, labels: [etiqueta] });
+            } else if (esFuente) {
+              // Ya está avisado: se actualiza el cuerpo con la ejecución más reciente, sin notificar de nuevo.
+              await github.rest.issues.update({ owner, repo, issue_number: abiertos[0].number, body: cuerpo });
             } else {
-              await github.rest.issues.create({
-                owner, repo, title: 'Falla del pipeline semanal PROFECO QQP', body: cuerpo, labels: ['alerta-pipeline'],
-              });
+              await github.rest.issues.createComment({ owner, repo, issue_number: abiertos[0].number, body: cuerpo });
             }
 
   dashboard:

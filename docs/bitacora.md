@@ -514,3 +514,40 @@ Revisión del repositorio con ojos de quien lo evalúa:
 - Revisar el bloqueo de Control de aplicaciones de Windows sobre `.venv\Scripts\python.exe`: impide correr el
   pipeline y las pruebas en local (la CI no está afectada).
 - PROFECO sigue sin publicar agosto: M-08 lleva 66 días en alerta (L-20).
+
+## 2026-11-03 · Operación — El origen cambió de lugar y publica archivos incompletos
+
+Las cuatro ejecuciones programadas desde el 2026-10-12 (runs 38310855542, 39306442080, 40382231505 y 41533444977)
+fallaron en el primer paso. El trabajo de pruebas pasó en las cuatro: lo único que falla es la descarga.
+
+### Diagnóstico
+
+| Comprobación | Resultado |
+|---|---|
+| Enlaces con token de `data/fuentes_profeco.csv` | Los tres devuelven **404**, igual que la página del conjunto (`qqp.php`) |
+| Catálogo de datos abiertos | Sigue publicando QQP, ahora en rutas estáticas `/docs/qqp/QQP_<año>.rar`; 2026 pasó de ZIP a RAR; archivos con fecha del 2026-10-26 |
+| Integridad de los archivos nuevos | **Los tres están truncados**: 2024 lista 18 de 24 CSV, 2025 lista 15 y 2026 lista 6, y la lectura se corta ("Truncated input file") |
+| Tamaños servidos frente al original | 70.5 MB contra 96 MB en 2024; 53.9 contra 85 en 2025; 20.8 MB en 2026 frente a índices internos que declaran CSV de 150 a 220 MB cada uno |
+| Original local `data/raw/QQP_2024.rar` | Íntegro: 96 MB y sus 24 CSV se listan sin error, lo que confirma que el problema es del servidor |
+| Página pública | Responde 200 con el corte del 2026-10-07 (datos al 2026-07-31): no hay dato nuevo que mostrar |
+
+Dentro del RAR de 2026 los CSV están fechados el 2026-10-06, así que es probable que agosto y septiembre existan y
+estén esperando a que suban el archivo completo.
+
+### Hallazgo para cuando vuelva el dato
+
+El archivo de 2026 cambió su carpeta interna de `QQP_2026/` a `2026/`, mientras 2024 y 2025 conservan la suya.
+Como un archivo se identifica por su ruta relativa (`src/ingest/load.py`), esos CSV entrarían como nuevos y se
+cargarían otra vez. Queda anotado en L-16: hay que resolverlo **antes** de actualizar las URL, no después.
+
+### Hecho
+
+Solo la reducción de ruido (D-042): la falla del origen se distingue de la del pipeline, avisa una vez con la
+etiqueta `fuente-no-disponible` y después actualiza el issue en silencio. El issue #7 se reetiquetó para que la
+lógica nueva lo reconozca en lugar de abrir otro.
+
+### Pendientes
+
+- Actualizar `data/fuentes_profeco.csv` a las rutas nuevas y manejar el cambio de carpeta de 2026, cuando PROFECO
+  sirva archivos completos.
+- Reportar a PROFECO que los archivos del catálogo están incompletos.
